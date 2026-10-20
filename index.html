@@ -550,9 +550,10 @@ function setSync(msg, on) { $('#sync').textContent = msg; $('#sync').toggleAttri
 const FILE = 'lifeig.json';
 let gh = null; // { owner, repo, token }, kept only on this device
 try { gh = JSON.parse(localStorage.getItem(KEY + '.gh')); } catch {}
-const ghFetch = (path, opts = {}) => fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/${path}`, {
+const ghFetch = (path, opts = {}) => fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}${path ? '/' + path : ''}`, {
   ...opts, cache: 'no-store',
-  headers: { Authorization: 'Bearer ' + gh.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } });
+  headers: { Authorization: 'Bearer ' + gh.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } })
+  .catch(() => { throw new Error("Couldn't reach GitHub (api.github.com). Check this device's internet connection. If it's working, an ad blocker, antivirus web protection, VPN or private DNS may be blocking GitHub."); });
 const ghError = r => new Error(
   r.status === 401 ? 'GitHub rejected the token. It may have expired. Paste a new one in sync settings.'
   : r.status === 403 && r.headers.get('x-ratelimit-remaining') === '0' ? 'GitHub is limiting requests right now. Sync will try again in a few minutes.'
