@@ -550,7 +550,8 @@ function setSync(msg, on) { $('#sync').textContent = msg; $('#sync').toggleAttri
 const FILE = 'lifeig.json';
 let gh = null; // { owner, repo, token }, kept only on this device
 try { gh = JSON.parse(localStorage.getItem(KEY + '.gh')); } catch {}
-const ghFetch = (path, opts = {}) => fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}${path ? '/' + path : ''}`, {
+const ghFetch = (path, opts) => ghApi(`repos/${gh.owner}/${gh.repo}${path ? '/' + path : ''}`, opts);
+const ghApi = (path, opts = {}) => fetch('https://api.github.com/' + path, {
   ...opts, cache: 'no-store',
   headers: { Authorization: 'Bearer ' + gh.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } })
   .catch(e => { throw new Error(/execute|invalid/i.test(e.message) ? 'The saved token has a character GitHub tokens never contain. Copy it again from GitHub and paste it in sync settings.' : "Couldn't reach GitHub (api.github.com). Check this device's internet connection. If it's working, an ad blocker, antivirus web protection, VPN or private DNS may be blocking GitHub."); });
@@ -563,11 +564,25 @@ const ghError = (r, step) => new Error(
   : step === 'save' ? `The token can read ${gh.repo} but isn't allowed to save to it. On GitHub, edit the token: under Permissions set Contents to "Read and write".`
   : `The token can see ${gh.repo} but isn't allowed to read its files. On GitHub, edit the token: under Permissions set Contents to "Read and write".`);
 
+// The token can't see the repo. Ask GitHub whose token it is, to tell "made on another account" from "repo not picked".
+async function whyHidden(repo) {
+  if (repo.status !== 403 && repo.status !== 404) return ghError(repo, 'see');
+  const u = await ghApi('user').catch(() => null);
+  const login = u?.ok ? (await u.json()).login : '';
+  if (login && login.toLowerCase() !== gh.owner.toLowerCase())
+    return new Error(`This token was made on the GitHub account "${login}", but ${gh.repo} belongs to "${gh.owner}". Sign in to GitHub as ${gh.owner}, create the token there, and paste it in sync settings.`);
+  if (gh.token.startsWith('ghp_') && !(u?.headers.get('x-oauth-scopes') || '').split(/,\s*/).includes('repo'))
+    return new Error(`This is a classic token without the "repo" scope, so it can't see private repositories. Create a fine-grained token instead (the link is in sync settings).`);
+  if (login)
+    return new Error(`The token is on the right account (${login}) but doesn't include ${gh.repo}. On GitHub, edit the token: under Repository access choose "Only select repositories", pick ${gh.repo}, then click Update at the bottom of the page.`);
+  return ghError(repo, 'see');
+}
+
 async function pull() { // -> { sha, items }; sha is undefined until the file exists
   const r = await ghFetch('contents/' + FILE);
   if (r.status === 404) {
     const repo = await ghFetch('');
-    if (!repo.ok) throw ghError(repo, 'see');
+    if (!repo.ok) throw await whyHidden(repo);
     return { sha: undefined, items: {} };
   }
   if (!r.ok) throw ghError(r, 'read');
