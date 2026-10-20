@@ -1,0 +1,5 @@
+node_modules/
+desktop/web/
+desktop/dist/
+mobile/www/
+release/

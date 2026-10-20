@@ -1,0 +1,17 @@
+{
+  "name": "lifeig-mobile",
+  "version": "1.0.0",
+  "description": "LifeIG for Android",
+  "private": true,
+  "scripts": {
+    "sync": "node ../copy-web.js www && cap sync android",
+    "apk": "npm run sync && cd android && .\\gradlew.bat assembleRelease \"-Dorg.gradle.java.home=%LOCALAPPDATA%\\LifeIG-build\\jdk21\""
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}

@@ -1033,7 +1033,10 @@ $('#stamp').textContent = fmtD(today(), { weekday: 'short', day: 'numeric', mont
 loadLocal();
 show(view);
 sync();
-if ('serviceWorker' in navigator && isSecureContext) navigator.serviceWorker.register('sw.js').catch(() => {});
+// Another open window saved: take its copy so neither overwrites the other
+addEventListener('storage', e => { if (e.key === KEY) { loadLocal(); render(); } });
+// Offline support is only needed on the website; the Windows and Android apps carry their files with them.
+if ('serviceWorker' in navigator && location.hostname.endsWith('github.io')) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
 </body>

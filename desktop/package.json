@@ -1,0 +1,39 @@
+{
+  "name": "lifeig-desktop",
+  "productName": "LifeIG",
+  "version": "1.0.0",
+  "description": "LifeIG: money, bills, journal, calendar and to-dos",
+  "author": "volodya-rua",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "node ../copy-web.js web && electron .",
+    "dist": "node ../copy-web.js web && electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "io.github.volodyarua.lifeig",
+    "productName": "LifeIG",
+    "icon": "../icon.ico",
+    "files": [
+      "main.js",
+      "web/**"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": "always",
+      "shortcutName": "LifeIG",
+      "artifactName": "LifeIG-Setup-${version}.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  }
+}
