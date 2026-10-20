@@ -124,6 +124,7 @@ input::placeholder,textarea::placeholder{color:var(--soft);opacity:.8}
 .entry span{display:block;font-size:.85rem;color:var(--soft);overflow-wrap:anywhere}
 .entry em{font:500 .88rem var(--f-num);font-stretch:87.5%;font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap}
 .entry.earn em{color:var(--earn)} .entry.spend em{color:var(--spend)}
+.tag{min-width:32px;text-align:center;font:600 .62rem var(--f-num);letter-spacing:.06em;text-transform:uppercase;color:var(--violet)}
 .where h2{font:600 1rem var(--f-head);margin:0 0 14px}
 .where h2 + .bars{margin-bottom:34px}
 .bars{list-style:none;margin:0;padding:0;display:grid;gap:14px}
@@ -715,7 +716,10 @@ function renderMoney() {
   $('#m-label').textContent = monthLabel(mMonth);
   $('#m-cur').value = cur();
   placeOptions();
-  const list = all('money').filter(e => e.date.startsWith(mMonth)).sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created);
+  // Paid bills count as money earned on the day they were paid. They're read from Bills, never copied, so edits there show up here.
+  const fromBills = all('bill').filter(b => b.paid).map(b => ({ id: b.id, bill: true, type: 'earn', amount: b.amount, where: custName(b.customer),
+    note: `Bill #${b.no}${b.what ? ' · ' + b.what : ''}`, date: b.paidOn || b.date, created: b.created }));
+  const list = [...all('money'), ...fromBills].filter(e => e.date.startsWith(mMonth)).sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created);
   const total = t => list.filter(e => e.type === t).reduce((s, e) => s + e.amount, 0);
   const earned = total('earn'), spent = total('spend'), net = earned - spent;
   $('#m-kicker').textContent = plural(list.length, 'entry', 'entries') + ' this month';
@@ -730,7 +734,9 @@ function renderMoney() {
   for (const e of list) {
     if (e.date !== last) html += `<li class="day-h">${dayLabel(last = e.date)}</li>`;
     html += `<li class="entry ${e.type}"><div><b>${esc(e.where)}</b>${e.note ? `<span>${esc(e.note)}</span>` : ''}</div>`
-      + `<em>${e.type === 'earn' ? '+' : '−'}${money(e.amount)}</em><button class="x" data-del="${e.id}" aria-label="Delete ${esc(e.where)}">×</button></li>`;
+      + `<em>${e.type === 'earn' ? '+' : '−'}${money(e.amount)}</em>`
+      + (e.bill ? `<span class="tag" title="From Bills. Mark the bill unpaid there to remove it.">Bill</span>`
+                : `<button class="x" data-del="${e.id}" aria-label="Delete ${esc(e.where)}">×</button>`) + `</li>`;
   }
   $('#m-list').innerHTML = html || `<li class="empty"><b>No entries for ${monthLabel(mMonth)}</b>Log what you earned or spent with the form above. Totals and the where-it-went bars fill in as you go.</li>`;
 }
@@ -763,9 +769,12 @@ function clearCust() { cEdit = null; cForm.reset(); $('#cu-save').textContent = 
 bForm.onsubmit = e => {
   e.preventDefault();
   const el = bForm.elements;
-  const bill = { ...((bEdit && get(bEdit)) || { id: newId(), kind: 'bill', created: Date.now() }),
-    customer: customerFor(el.customer.value.trim()), no: el.no.value.trim(), date: el.date.value || today(),
-    amount: Math.round(+el.amount.value * 100) / 100, what: el.what.value.trim(), paid: el.status.value === 'paid' };
+  const base = (bEdit && get(bEdit)) || { id: newId(), kind: 'bill', created: Date.now() };
+  const date = el.date.value || today(), paid = el.status.value === 'paid';
+  const bill = { ...base, customer: customerFor(el.customer.value.trim()), no: el.no.value.trim(), date,
+    amount: Math.round(+el.amount.value * 100) / 100, what: el.what.value.trim(), paid,
+    // the day the money came in: a new bill entered as paid uses its own date; marking an existing one paid uses today
+    paidOn: !paid ? '' : base.paid ? (base.paidOn || base.date) : bEdit ? today() : date };
   clearBill(); put(bill);
   el.customer.focus();
 };
@@ -791,7 +800,7 @@ $('#bills').addEventListener('click', e => {
     $('#b-save').textContent = 'Save changes'; $('#b-cancel').hidden = false;
     bForm.scrollIntoView({ block: 'nearest' }); el.amount.focus();
   } else if (pay) {
-    const x = get(pay.dataset.pay); if (x) put({ ...x, paid: !x.paid });
+    const x = get(pay.dataset.pay); if (x) put({ ...x, paid: !x.paid, paidOn: x.paid ? '' : today() });
   } else if (cust) {
     bCust = bCust === cust.dataset.cust ? null : cust.dataset.cust; renderBills();
   } else if (filter) {
