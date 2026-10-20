@@ -554,25 +554,28 @@ const ghFetch = (path, opts = {}) => fetch(`https://api.github.com/repos/${gh.ow
   ...opts, cache: 'no-store',
   headers: { Authorization: 'Bearer ' + gh.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } })
   .catch(e => { throw new Error(/execute|invalid/i.test(e.message) ? 'The saved token has a character GitHub tokens never contain. Copy it again from GitHub and paste it in sync settings.' : "Couldn't reach GitHub (api.github.com). Check this device's internet connection. If it's working, an ad blocker, antivirus web protection, VPN or private DNS may be blocking GitHub."); });
-const ghError = r => new Error(
-  r.status === 401 ? 'GitHub rejected the token. It may have expired. Paste a new one in sync settings.'
+// step says what sync was doing, so a 403/404 can name the exact token setting that's missing
+const ghError = (r, step) => new Error(
+  r.status === 401 ? 'GitHub rejected the token. It may have expired or been deleted. Create a new one and paste it in sync settings.'
   : r.status === 403 && r.headers.get('x-ratelimit-remaining') === '0' ? 'GitHub is limiting requests right now. Sync will try again in a few minutes.'
-  : r.status === 403 || r.status === 404 ? "The token can't write to that repository. Check the repository name and give the token Contents: Read and write."
-  : `GitHub answered with error ${r.status}. Sync will try again shortly.`);
+  : r.status !== 403 && r.status !== 404 ? `GitHub answered with error ${r.status}. Sync will try again shortly.`
+  : step === 'see' ? `This token can't see ${gh.owner}/${gh.repo}. Check the username and repository name. Then on GitHub, edit the token: under Repository access choose "Only select repositories" and pick ${gh.repo}.`
+  : step === 'save' ? `The token can read ${gh.repo} but isn't allowed to save to it. On GitHub, edit the token: under Permissions set Contents to "Read and write".`
+  : `The token can see ${gh.repo} but isn't allowed to read its files. On GitHub, edit the token: under Permissions set Contents to "Read and write".`);
 
 async function pull() { // -> { sha, items }; sha is undefined until the file exists
   const r = await ghFetch('contents/' + FILE);
   if (r.status === 404) {
     const repo = await ghFetch('');
-    if (!repo.ok) throw ghError(repo);
+    if (!repo.ok) throw ghError(repo, 'see');
     return { sha: undefined, items: {} };
   }
-  if (!r.ok) throw ghError(r);
+  if (!r.ok) throw ghError(r, 'read');
   const f = await r.json();
   let content = f.content;
   if (!content) { // files over 1 MB come back without content; read them as a blob
     const b = await ghFetch('git/blobs/' + f.sha);
-    if (!b.ok) throw ghError(b);
+    if (!b.ok) throw ghError(b, 'read');
     content = (await b.json()).content;
   }
   return { sha: f.sha, items: JSON.parse(new TextDecoder().decode(Uint8Array.fromBase64(content.replace(/\s/g, '')))).items || {} };
@@ -604,7 +607,7 @@ async function sync() {
       if (ids.length === items.size && [...items].every(([id, v]) => remote.items[id]?.updated === v.updated)) break; // GitHub is up to date
       const r = await push(remote.sha, items);
       if (r.ok) break;
-      if ((r.status !== 409 && r.status !== 422) || tries === 3) throw ghError(r); // 409/422: another device saved first, so merge again
+      if ((r.status !== 409 && r.status !== 422) || tries === 3) throw ghError(r, 'save'); // 409/422: another device saved first, so merge again
     }
     setSync('Synced ' + new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }), true);
   } catch (e) {

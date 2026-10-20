@@ -1,7 +1,7 @@
 {
   "name": "lifeig-desktop",
   "productName": "LifeIG",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "LifeIG: money, bills, journal, calendar and to-dos",
   "author": "volodya-rua",
   "private": true,
