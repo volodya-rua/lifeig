@@ -496,8 +496,8 @@ dialog a{color:var(--blue)}
     <p>Everything you add is saved on this device first. Connect a private GitHub repository to keep a copy there and share it between your PC and phone.</p>
     <ol class="steps">
       <li>Create a <b>private</b> repository on GitHub, for example <b>lifeig-data</b>.</li>
-      <li>Create a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a>. Under Repository access choose <b>Only select repositories</b> and pick that repository. Under Permissions set <b>Contents</b> to <b>Read and write</b>.</li>
-      <li>Fill in the fields below. Do the same on each device you use.</li>
+      <li>Open <a id="gh-new-token" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">this token page</a>. It fills in the name and the <b>Contents: Read and write</b> permission for you. Under Repository access choose <b>Only select repositories</b>, pick that repository, then click <b>Generate token</b>.</li>
+      <li>Fill in the fields below and paste the new token. Do the same on each device you use.</li>
     </ol>
     <label class="f">GitHub username<input id="gh-owner" required pattern="[A-Za-z0-9\-]+" spellcheck="false" autocapitalize="off"></label>
     <label class="f">Repository name<input id="gh-repo" required pattern="[A-Za-z0-9._\-]+" placeholder="lifeig-data" spellcheck="false" autocapitalize="off"></label>
@@ -640,10 +640,19 @@ const dlg = $('#sync-dlg');
 $('#sync').onclick = () => {
   $('#gh-owner').value = gh?.owner || ''; $('#gh-repo').value = gh?.repo || ''; $('#gh-token').value = '';
   $('#gh-token').required = !gh;
-  $('#gh-token-l').textContent = gh ? 'Token (leave empty to keep the current one)' : 'Token';
+  $('#gh-token-l').textContent = gh ? 'Token (paste a new one, or leave empty to keep the current one)' : 'Token';
   $('#gh-off').hidden = !gh;
+  tokenLink();
   dlg.showModal();
 };
+// Pre-filled token page: name, owner, one-year expiry and Contents read/write (GitHub can't pre-pick the repository)
+function tokenLink() {
+  const p = new URLSearchParams({ name: 'LifeIG', description: 'Sync for the LifeIG app', expires_in: '366', contents: 'write' });
+  const owner = $('#gh-owner').value.trim();
+  if (owner) p.set('target_name', owner);
+  $('#gh-new-token').href = 'https://github.com/settings/personal-access-tokens/new?' + p;
+}
+$('#gh-owner').addEventListener('input', tokenLink);
 $('#gh-cancel').onclick = () => dlg.close();
 $('#sync-form').onsubmit = e => {
   e.preventDefault();
