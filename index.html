@@ -501,7 +501,7 @@ dialog a{color:var(--blue)}
     </ol>
     <label class="f">GitHub username<input id="gh-owner" required pattern="[A-Za-z0-9\-]+" spellcheck="false" autocapitalize="off"></label>
     <label class="f">Repository name<input id="gh-repo" required pattern="[A-Za-z0-9._\-]+" placeholder="lifeig-data" spellcheck="false" autocapitalize="off"></label>
-    <label class="f"><span id="gh-token-l">Token</span><input id="gh-token" type="password" placeholder="github_pat_…" spellcheck="false" autocapitalize="off"></label>
+    <label class="f"><span id="gh-token-l">Token</span><input id="gh-token" type="password" placeholder="github_pat_…" spellcheck="false" autocapitalize="off" pattern="\s*[A-Za-z0-9_]+\s*" title="Paste the token exactly as GitHub shows it. It only has letters, numbers and underscores."></label>
     <div class="row">
       <button class="btn">Connect and sync</button>
       <button type="button" class="ghost" id="gh-cancel">Cancel</button>
@@ -553,7 +553,7 @@ try { gh = JSON.parse(localStorage.getItem(KEY + '.gh')); } catch {}
 const ghFetch = (path, opts = {}) => fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}${path ? '/' + path : ''}`, {
   ...opts, cache: 'no-store',
   headers: { Authorization: 'Bearer ' + gh.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } })
-  .catch(() => { throw new Error("Couldn't reach GitHub (api.github.com). Check this device's internet connection. If it's working, an ad blocker, antivirus web protection, VPN or private DNS may be blocking GitHub."); });
+  .catch(e => { throw new Error(/execute|invalid/i.test(e.message) ? 'The saved token has a character GitHub tokens never contain. Copy it again from GitHub and paste it in sync settings.' : "Couldn't reach GitHub (api.github.com). Check this device's internet connection. If it's working, an ad blocker, antivirus web protection, VPN or private DNS may be blocking GitHub."); });
 const ghError = r => new Error(
   r.status === 401 ? 'GitHub rejected the token. It may have expired. Paste a new one in sync settings.'
   : r.status === 403 && r.headers.get('x-ratelimit-remaining') === '0' ? 'GitHub is limiting requests right now. Sync will try again in a few minutes.'
