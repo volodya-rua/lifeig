@@ -17,17 +17,17 @@
 :root{
   --desk:#E3E5DC; --sheet:#F8F8F3; --field:#FFFFFF; --ink:#1B201E; --soft:#5E6660; --rule:#D2D5CB;
   --blue:#2B40C4; --on-blue:#FFFFFF;     /* royal-blue fountain-pen ink */
-  --earn:#1F7353; --spend:#B0345A; --gold:#E0A325; --on-gold:#1B201E;
+  --earn:#1F7353; --spend:#B0345A; --gold:#E0A325; --on-gold:#1B201E; --violet:#6E44B8;
   --f-head:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
   --f-read:"Newsreader",Georgia,"Times New Roman",serif;
   --f-num:"Martian Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --desk:#0F1211; --sheet:#171B19; --field:#1E2320; --ink:#E5E8E1; --soft:#959C95; --rule:#2B312D;
-  --blue:#93A0FF; --on-blue:#0D1124; --earn:#5CC398; --spend:#F089A8; --gold:#EDB94F; color-scheme:dark}}
+  --blue:#93A0FF; --on-blue:#0D1124; --earn:#5CC398; --spend:#F089A8; --gold:#EDB94F; --violet:#B79BF0; color-scheme:dark}}
 :root[data-theme="dark"]{
   --desk:#0F1211; --sheet:#171B19; --field:#1E2320; --ink:#E5E8E1; --soft:#959C95; --rule:#2B312D;
-  --blue:#93A0FF; --on-blue:#0D1124; --earn:#5CC398; --spend:#F089A8; --gold:#EDB94F; color-scheme:dark}
+  --blue:#93A0FF; --on-blue:#0D1124; --earn:#5CC398; --spend:#F089A8; --gold:#EDB94F; --violet:#B79BF0; color-scheme:dark}
 
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -59,15 +59,15 @@ button,input,select,textarea{font:inherit;color:inherit}
 .tab::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
 .tab:hover{background:color-mix(in srgb,var(--c) 32%,var(--desk))}
 .tab[aria-selected="true"]{background:var(--sheet);font-weight:700;margin-left:-1px;padding-right:14px;position:relative;z-index:1}
-.tab[data-v="journal"]{--c:var(--spend)} .tab[data-v="calendar"]{--c:var(--gold)} .tab[data-v="todo"]{--c:var(--earn)}
+.tab[data-v="bills"]{--c:var(--violet)} .tab[data-v="journal"]{--c:var(--spend)} .tab[data-v="calendar"]{--c:var(--gold)} .tab[data-v="todo"]{--c:var(--earn)}
 
 @media (max-width:760px){
   .top{margin-right:0}
   .book{grid-template-columns:minmax(0,1fr)}
   .tabs{order:-1;flex-direction:row;align-items:flex-end;gap:4px;padding:8px 6px 0;top:env(safe-area-inset-top,0px);z-index:5;background:var(--desk)}
-  .tab{writing-mode:horizontal-tb;flex:1;justify-content:center;padding:11px 4px 10px;border:1px solid var(--rule);border-bottom:0;border-top:3px solid var(--c);border-radius:6px 6px 0 0;font-size:.8rem;letter-spacing:.02em}
+  .tab{writing-mode:horizontal-tb;flex:1;justify-content:center;padding:11px 2px 10px;border:1px solid var(--rule);border-bottom:0;border-top:3px solid var(--c);border-radius:6px 6px 0 0;font-size:.76rem;letter-spacing:.01em;min-width:0}
   .tab::before{display:none}
-  .tab[aria-selected="true"]{margin:0 0 -1px;padding:12px 4px 11px}
+  .tab[aria-selected="true"]{margin:0 0 -1px;padding:12px 2px 11px}
 }
 
 /* shared pieces */
@@ -138,8 +138,51 @@ input::placeholder,textarea::placeholder{color:var(--soft);opacity:.8}
 @media (max-width:520px){
   .mform .amt,.mform .dt{grid-column:span 3}
   .mform .wh,.mform .nt{grid-column:1/-1}
-  .ledger div{padding-right:8px} .ledger div + div{padding-left:10px}
+  .ledger{grid-template-columns:minmax(0,1fr)}
+  .ledger div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0}
+  .ledger div + div{padding-left:0;border-left:0;border-top:1px solid var(--rule)}
+  .ledger dd{margin:0;font-size:1.2rem}
 }
+
+/* bills */
+.bills{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:36px;align-items:start}
+.bform{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.bform .cu{grid-column:span 4} .bform .no,.bform .am,.bform .dt{grid-column:span 2}
+.bform .st{grid-column:span 2;align-self:end;justify-self:start}
+.bform .wf{grid-column:1/-1}
+.seg input[value="paid"]:checked + label{background:var(--earn)}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:22px 0 4px}
+.chipbtn{border:1px solid var(--rule);background:none;border-radius:999px;padding:5px 12px;font-size:.8rem;color:var(--soft);cursor:pointer}
+.chipbtn:hover{border-color:var(--soft)}
+.chipbtn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.bill{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--rule)}
+.bill .main{background:none;border:0;padding:0;text-align:left;cursor:pointer;min-width:0}
+.bill .main b{display:block;font-weight:600;overflow-wrap:anywhere}
+.bill .main span{display:block;font-size:.8rem;color:var(--soft);overflow-wrap:anywhere}
+.bill .main i{font:500 .72rem var(--f-num);font-style:normal}
+.bill .main:hover b{text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:4px}
+.bill em{font:500 .88rem var(--f-num);font-stretch:87.5%;font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{border:0;border-radius:999px;padding:4px 10px;font:600 .72rem var(--f-head);cursor:pointer;white-space:nowrap}
+.pill.due{background:color-mix(in srgb,var(--spend) 15%,transparent);color:var(--spend)}
+.pill.paid{background:color-mix(in srgb,var(--earn) 15%,transparent);color:var(--earn)}
+.side-h{font:600 1rem var(--f-head);margin:0 0 4px}
+.custs{list-style:none;margin:0;padding:0}
+.cust{display:grid;gap:3px;padding:14px 0;border-bottom:1px solid var(--rule)}
+.cust .c-name{justify-self:start;background:none;border:0;padding:0;text-align:left;cursor:pointer;font:600 1.02rem var(--f-head);overflow-wrap:anywhere}
+.cust .c-name[aria-pressed="true"]{color:var(--blue)}
+.cust .meta{font-size:.84rem;color:var(--soft);overflow-wrap:anywhere}
+.cust .meta a{color:inherit}
+.cust .tot{font:500 .7rem var(--f-num);color:var(--soft)}
+.cust .owe{color:var(--spend)}
+.cust .acts{display:flex;align-items:center;gap:4px;margin-top:4px}
+.ghost.sm{padding:4px 9px;font-size:.78rem}
+.newcust summary{cursor:pointer;list-style:none;padding:14px 0;font-weight:600;color:var(--blue)}
+.newcust summary::-webkit-details-marker{display:none}
+.newcust summary::before{content:"+ "} .newcust[open] summary::before{content:"− "}
+.cuform{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cuform .wide{grid-column:1/-1}
+@media (max-width:900px){.bills{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:520px){.bform .cu{grid-column:1/-1} .bform .no,.bform .am,.bform .dt,.bform .st{grid-column:span 3}}
 
 /* journal */
 .journal{display:grid;grid-template-columns:270px minmax(0,1fr);gap:36px;align-items:start}
@@ -307,6 +350,56 @@ dialog a{color:var(--blue)}
         </div>
       </section>
 
+      <section id="bills" class="view" role="tabpanel" aria-labelledby="tab-bills" hidden>
+        <div class="head">
+          <div><span class="kicker" id="b-kicker"></span><h1>Bills</h1></div>
+        </div>
+        <dl class="ledger">
+          <div><dt>Billed</dt><dd id="b-total"></dd></div>
+          <div><dt>Received</dt><dd id="b-paid" class="earn-t"></dd></div>
+          <div><dt>Unpaid</dt><dd id="b-owed" class="spend-t"></dd></div>
+        </dl>
+        <div class="bills">
+          <div>
+            <form id="b-form" class="panel bform" autocomplete="off">
+              <label class="f cu">Customer<input id="b-customer" name="customer" list="b-custs" required pattern=".*\S.*" maxlength="80" placeholder="Pick or type a new name"></label>
+              <label class="f no">Bill no.<input id="b-no" name="no" required pattern=".*\S.*" maxlength="30" class="num"></label>
+              <label class="f am">Amount<input id="b-amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="0.00" class="num"></label>
+              <label class="f dt">Date<input id="b-date" name="date" type="date" required></label>
+              <div class="seg st" role="radiogroup" aria-label="Payment">
+                <input type="radio" name="status" id="b-s-due" value="due" checked><label for="b-s-due">Unpaid</label>
+                <input type="radio" name="status" id="b-s-paid" value="paid"><label for="b-s-paid">Paid</label>
+              </div>
+              <label class="f wf">What it was for<input id="b-what" name="what" maxlength="160" placeholder="Optional"></label>
+              <div class="row wf"><button class="btn" id="b-save">Add bill</button><button type="button" class="ghost" id="b-cancel" hidden>Cancel</button></div>
+              <datalist id="b-custs"></datalist>
+            </form>
+            <div class="filters">
+              <button class="chipbtn" data-bf="all">All</button>
+              <button class="chipbtn" data-bf="due">Unpaid</button>
+              <button class="chipbtn" data-bf="paid">Paid</button>
+              <button class="chipbtn" id="b-who" data-cust="" aria-pressed="true" hidden></button>
+            </div>
+            <ul class="entries" id="b-list"></ul>
+          </div>
+          <aside>
+            <h2 class="side-h">Customers</h2>
+            <ul class="custs" id="cu-list"></ul>
+            <details class="newcust" id="cu-box">
+              <summary id="cu-sum">Add a customer</summary>
+              <form id="cu-form" class="panel cuform" autocomplete="off">
+                <label class="f wide">Name<input id="cu-name" name="name" required pattern=".*\S.*" maxlength="80"></label>
+                <label class="f">Phone<input id="cu-phone" name="phone" type="tel" maxlength="30"></label>
+                <label class="f">Email<input id="cu-email" name="email" type="email" maxlength="100"></label>
+                <label class="f wide">Address<input id="cu-address" name="address" maxlength="200"></label>
+                <label class="f wide">Notes<input id="cu-note" name="note" maxlength="200" placeholder="GST number, how they like to be contacted…"></label>
+                <div class="row wide"><button class="btn" id="cu-save">Add customer</button><button type="button" class="ghost" id="cu-cancel" hidden>Cancel</button></div>
+              </form>
+            </details>
+          </aside>
+        </div>
+      </section>
+
       <section id="journal" class="view" role="tabpanel" aria-labelledby="tab-journal" hidden>
         <div class="head">
           <div><span class="kicker" id="j-kicker"></span><h1>Journal</h1></div>
@@ -387,6 +480,7 @@ dialog a{color:var(--blue)}
 
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" id="tab-money" data-v="money" aria-controls="money">Money</button>
+      <button class="tab" role="tab" id="tab-bills" data-v="bills" aria-controls="bills">Bills</button>
       <button class="tab" role="tab" id="tab-journal" data-v="journal" aria-controls="journal">Journal</button>
       <button class="tab" role="tab" id="tab-calendar" data-v="calendar" aria-controls="calendar">Calendar</button>
       <button class="tab" role="tab" id="tab-todo" data-v="todo" aria-controls="todo">To-do</button>
@@ -544,7 +638,7 @@ $('#gh-off').onclick = () => {
 };
 
 /* ---------- sections ---------- */
-const VIEWS = ['money', 'journal', 'calendar', 'todo'];
+const VIEWS = ['money', 'bills', 'journal', 'calendar', 'todo'];
 let view = 'money';
 try { view = localStorage.getItem(KEY + '.tab') || view; } catch {}
 if (VIEWS.includes(location.hash.slice(1))) view = location.hash.slice(1);
@@ -560,7 +654,7 @@ function show(v) {
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => show(t.dataset.v));
 function render() {
   const a = document.activeElement, field = a?.closest?.('.t-edit') && a.name; // keep the cursor in a to-do being edited
-  ({ money: renderMoney, journal: renderJournal, calendar: renderCal, todo: renderTodo })[view]();
+  ({ money: renderMoney, bills: renderBills, journal: renderJournal, calendar: renderCal, todo: renderTodo })[view]();
   if (field) $('#' + view).querySelector(`.t-edit [name="${field}"]`)?.focus();
 }
 
@@ -639,6 +733,118 @@ function renderMoney() {
       + `<em>${e.type === 'earn' ? '+' : '−'}${money(e.amount)}</em><button class="x" data-del="${e.id}" aria-label="Delete ${esc(e.where)}">×</button></li>`;
   }
   $('#m-list').innerHTML = html || `<li class="empty"><b>No entries for ${monthLabel(mMonth)}</b>Log what you earned or spent with the form above. Totals and the where-it-went bars fill in as you go.</li>`;
+}
+
+/* ---------- bills & customers ---------- */
+let bEdit = null, bFilter = 'all', bCust = null, cEdit = null;
+const bForm = $('#b-form'), cForm = $('#cu-form');
+const custName = id => get(id)?.name || 'Unknown customer';
+$('#b-date').value = today();
+// Next bill number follows the latest one: INV-0042 -> INV-0043
+function nextNo() {
+  const last = all('bill').sort((a, b) => b.created - a.created)[0]?.no;
+  return last ? last.replace(/\d+(?=\D*$)/, d => String(+d + 1).padStart(d.length, '0')) : '001';
+}
+function customerFor(name) { // an existing customer with that name, or a new one
+  const c = all('customer').find(c => c.name.toLowerCase() === name.toLowerCase());
+  if (c) return c.id;
+  const id = newId();
+  put({ id, kind: 'customer', name, phone: '', email: '', address: '', note: '', created: Date.now() });
+  return id;
+}
+function clearBill() {
+  bEdit = null;
+  const el = bForm.elements;
+  el.customer.value = el.no.value = el.amount.value = el.what.value = ''; el.status.value = 'due';
+  $('#b-save').textContent = 'Add bill'; $('#b-cancel').hidden = true;
+}
+function clearCust() { cEdit = null; cForm.reset(); $('#cu-save').textContent = 'Add customer'; $('#cu-cancel').hidden = true; }
+
+bForm.onsubmit = e => {
+  e.preventDefault();
+  const el = bForm.elements;
+  const bill = { ...((bEdit && get(bEdit)) || { id: newId(), kind: 'bill', created: Date.now() }),
+    customer: customerFor(el.customer.value.trim()), no: el.no.value.trim(), date: el.date.value || today(),
+    amount: Math.round(+el.amount.value * 100) / 100, what: el.what.value.trim(), paid: el.status.value === 'paid' };
+  clearBill(); put(bill);
+  el.customer.focus();
+};
+$('#b-cancel').onclick = () => { clearBill(); renderBills(); };
+cForm.onsubmit = e => {
+  e.preventDefault();
+  const el = cForm.elements;
+  const c = { ...((cEdit && get(cEdit)) || { id: newId(), kind: 'customer', created: Date.now() }),
+    name: el.name.value.trim(), phone: el.phone.value.trim(), email: el.email.value.trim(), address: el.address.value.trim(), note: el.note.value.trim() };
+  clearCust(); put(c);
+};
+$('#cu-cancel').onclick = () => { clearCust(); $('#cu-box').open = false; };
+
+$('#bills').addEventListener('click', e => {
+  const t = e.target, el = bForm.elements;
+  const editBill = t.closest('[data-bedit]'), pay = t.closest('[data-pay]'), cust = t.closest('[data-cust]'),
+        filter = t.closest('[data-bf]'), editCust = t.closest('[data-cedit]');
+  if (editBill) {
+    const x = get(editBill.dataset.bedit); if (!x) return;
+    bEdit = x.id;
+    el.customer.value = custName(x.customer); el.no.value = x.no; el.date.value = x.date;
+    el.amount.value = x.amount; el.what.value = x.what; el.status.value = x.paid ? 'paid' : 'due';
+    $('#b-save').textContent = 'Save changes'; $('#b-cancel').hidden = false;
+    bForm.scrollIntoView({ block: 'nearest' }); el.amount.focus();
+  } else if (pay) {
+    const x = get(pay.dataset.pay); if (x) put({ ...x, paid: !x.paid });
+  } else if (cust) {
+    bCust = bCust === cust.dataset.cust ? null : cust.dataset.cust; renderBills();
+  } else if (filter) {
+    bFilter = filter.dataset.bf; renderBills();
+  } else if (editCust) {
+    const c = get(editCust.dataset.cedit); if (!c) return;
+    cEdit = c.id;
+    for (const k of ['name', 'phone', 'email', 'address', 'note']) cForm.elements[k].value = c[k] || '';
+    $('#cu-save').textContent = 'Save changes'; $('#cu-cancel').hidden = false;
+    $('#cu-box').open = true; $('#cu-name').focus();
+  }
+});
+
+function renderBills() {
+  const custs = all('customer'), bills = all('bill');
+  const sum = xs => xs.reduce((s, b) => s + b.amount, 0);
+  if (bEdit && !get(bEdit)) clearBill();
+  if (bCust && !get(bCust)) bCust = null;
+  if (!bEdit && !$('#b-no').value) $('#b-no').value = nextNo();
+  $('#b-custs').innerHTML = custs.map(c => `<option value="${esc(c.name)}">`).join('');
+
+  const scope = bills.filter(b => !bCust || b.customer === bCust);
+  const received = sum(scope.filter(b => b.paid)), owed = sum(scope.filter(b => !b.paid));
+  $('#b-kicker').textContent = bCust ? `${plural(scope.length, 'bill')} for ${custName(bCust)}` : plural(bills.length, 'bill');
+  $('#b-total').textContent = money(received + owed);
+  $('#b-paid').textContent = money(received);
+  $('#b-owed').textContent = money(owed);
+  document.querySelectorAll('[data-bf]').forEach(b => b.setAttribute('aria-pressed', b.dataset.bf === bFilter));
+  $('#b-who').hidden = !bCust;
+  $('#b-who').dataset.cust = bCust || '';
+  $('#b-who').textContent = bCust ? custName(bCust) + '  ×' : '';
+
+  const list = scope.filter(b => bFilter === 'all' || (bFilter === 'paid') === b.paid)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created);
+  $('#b-list').innerHTML = list.map(b => `<li class="bill"><button class="main" data-bedit="${b.id}" title="Edit bill">`
+    + `<b>${esc(custName(b.customer))}</b><span><i>#${esc(b.no)}</i> · ${shortDate(b.date)}${b.what ? ' · ' + esc(b.what) : ''}</span></button>`
+    + `<em>${money(b.amount)}</em><button class="pill ${b.paid ? 'paid' : 'due'}" data-pay="${b.id}" title="Mark as ${b.paid ? 'unpaid' : 'paid'}">${b.paid ? 'Paid' : 'Unpaid'}</button>`
+    + `<button class="x" data-del="${b.id}" aria-label="Delete bill ${esc(b.no)}">×</button></li>`).join('')
+    || (bills.length
+      ? `<li class="none">No ${bFilter === 'all' ? '' : bFilter === 'paid' ? 'paid ' : 'unpaid '}bills${bCust ? ' for ' + esc(custName(bCust)) : ''}.</li>`
+      : `<li class="empty"><b>No bills yet</b>Add one with the form above. If you type a new customer's name, they're added to your customers list, where you can fill in their details.</li>`);
+
+  const rows = custs.map(c => {
+    const xs = bills.filter(b => b.customer === c.id);
+    return { c, n: xs.length, total: sum(xs), owed: sum(xs.filter(b => !b.paid)) };
+  }).sort((a, b) => b.owed - a.owed || a.c.name.localeCompare(b.c.name));
+  $('#cu-list').innerHTML = rows.map(({ c, n, total, owed }) => {
+    const contact = [c.phone && `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ''))}">${esc(c.phone)}</a>`, c.email && `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`].filter(Boolean).join(' · ');
+    return `<li class="cust"><button class="c-name" data-cust="${c.id}" aria-pressed="${c.id === bCust}" title="Show only their bills">${esc(c.name)}</button>`
+      + (contact ? `<div class="meta">${contact}</div>` : '') + (c.address ? `<div class="meta">${esc(c.address)}</div>` : '') + (c.note ? `<div class="meta">${esc(c.note)}</div>` : '')
+      + `<div class="tot">${plural(n, 'bill')} · ${money(total)}${owed ? ` · <span class="owe">${money(owed)} unpaid</span>` : ''}</div>`
+      + `<div class="acts"><button class="ghost sm" data-cedit="${c.id}">Edit details</button>${n ? '' : `<button class="x" data-del="${c.id}" aria-label="Delete ${esc(c.name)}">×</button>`}</div></li>`;
+  }).join('') || `<li class="none">Customers you bill show up here with their contact details and what they owe you.</li>`;
 }
 
 /* ---------- journal ---------- */
