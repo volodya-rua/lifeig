@@ -287,6 +287,9 @@ dialog p,.steps{margin:0;color:var(--soft);font-size:.9rem;max-width:58ch}
 .steps{padding-left:1.3em;display:grid;gap:7px}
 .steps b{color:var(--ink);font-weight:600}
 dialog a{color:var(--blue)}
+.gh-msg{margin:0;padding:11px 13px;border-radius:4px;font-size:.88rem;line-height:1.45;color:var(--ink);
+  background:color-mix(in srgb,var(--spend) 13%,var(--sheet));border:1px solid color-mix(in srgb,var(--spend) 45%,var(--sheet))}
+.btn:disabled{opacity:.6;cursor:progress}
 .row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .row .x{margin-left:auto}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -497,13 +500,14 @@ dialog a{color:var(--blue)}
     <ol class="steps">
       <li>Create a <b>private</b> repository on GitHub, for example <b>lifeig-data</b>.</li>
       <li>Open <a id="gh-new-token" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">this token page</a>. It fills in the name and the <b>Contents: Read and write</b> permission for you. Under Repository access choose <b>Only select repositories</b>, pick that repository, then click <b>Generate token</b>.</li>
-      <li>Fill in the fields below and paste the new token. Do the same on each device you use.</li>
+      <li>Fill in the fields below, paste the token and click <b>Connect and sync</b>. LifeIG checks it straight away and tells you here if anything is missing. Do the same on each device you use.</li>
     </ol>
     <label class="f">GitHub username<input id="gh-owner" required pattern="[A-Za-z0-9\-]+" spellcheck="false" autocapitalize="off"></label>
     <label class="f">Repository name<input id="gh-repo" required pattern="[A-Za-z0-9._\-]+" placeholder="lifeig-data" spellcheck="false" autocapitalize="off"></label>
     <label class="f"><span id="gh-token-l">Token</span><input id="gh-token" type="password" placeholder="github_pat_…" spellcheck="false" autocapitalize="off" pattern="\s*[A-Za-z0-9_]+\s*" title="Paste the token exactly as GitHub shows it. It only has letters, numbers and underscores."></label>
+    <p class="gh-msg" id="gh-msg" role="alert" hidden></p>
     <div class="row">
-      <button class="btn">Connect and sync</button>
+      <button class="btn" id="gh-connect">Connect and sync</button>
       <button type="button" class="ghost" id="gh-cancel">Cancel</button>
       <button type="button" class="x txt" id="gh-off">Disconnect this device</button>
     </div>
@@ -548,21 +552,26 @@ function setSync(msg, on) { $('#sync').textContent = msg; $('#sync').toggleAttri
 /* ---------- GitHub sync: the whole store is one JSON file, merged item by item (latest edit wins) ---------- */
 // ponytail: one file for everything; split it per section if lifeig.json ever grows past a few MB.
 const FILE = 'lifeig.json';
-let gh = null; // { owner, repo, token }, kept only on this device
+let gh = null; // { owner, repo, token, bad? }, kept only on this device. `bad` holds why GitHub refused it; sync stays paused until it's fixed.
 try { gh = JSON.parse(localStorage.getItem(KEY + '.gh')); } catch {}
+const saveGh = () => { try { gh ? localStorage.setItem(KEY + '.gh', JSON.stringify(gh)) : localStorage.removeItem(KEY + '.gh'); } catch {} };
+// A problem only new sync settings can fix (token, permissions, repository name), as opposed to being offline
+const settingsError = msg => Object.assign(new Error(msg), { settings: true });
 const ghFetch = (path, opts) => ghApi(`repos/${gh.owner}/${gh.repo}${path ? '/' + path : ''}`, opts);
 const ghApi = (path, opts = {}) => fetch('https://api.github.com/' + path, {
   ...opts, cache: 'no-store',
   headers: { Authorization: 'Bearer ' + gh.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } })
-  .catch(e => { throw new Error(/execute|invalid/i.test(e.message) ? 'The saved token has a character GitHub tokens never contain. Copy it again from GitHub and paste it in sync settings.' : "Couldn't reach GitHub (api.github.com). Check this device's internet connection. If it's working, an ad blocker, antivirus web protection, VPN or private DNS may be blocking GitHub."); });
+  .catch(e => { throw /execute|invalid/i.test(e.message) ? settingsError('The token has a character GitHub tokens never contain. Copy it again from GitHub and paste it here.') : new Error("Couldn't reach GitHub (api.github.com). Check this device's internet connection. If it's working, an ad blocker, antivirus web protection, VPN or private DNS may be blocking GitHub."); });
 // step says what sync was doing, so a 403/404 can name the exact token setting that's missing
-const ghError = (r, step) => new Error(
-  r.status === 401 ? 'GitHub rejected the token. It may have expired or been deleted. Create a new one and paste it in sync settings.'
-  : r.status === 403 && r.headers.get('x-ratelimit-remaining') === '0' ? 'GitHub is limiting requests right now. Sync will try again in a few minutes.'
-  : r.status !== 403 && r.status !== 404 ? `GitHub answered with error ${r.status}. Sync will try again shortly.`
-  : step === 'see' ? `This token can't see ${gh.owner}/${gh.repo}. Check the username and repository name. Then on GitHub, edit the token: under Repository access choose "Only select repositories" and pick ${gh.repo}.`
-  : step === 'save' ? `The token can read ${gh.repo} but isn't allowed to save to it. On GitHub, edit the token: under Permissions set Contents to "Read and write".`
-  : `The token can see ${gh.repo} but isn't allowed to read its files. On GitHub, edit the token: under Permissions set Contents to "Read and write".`);
+function ghError(r, step) {
+  if (r.status === 403 && r.headers.get('x-ratelimit-remaining') === '0') return new Error('GitHub is limiting requests right now. Sync will try again in a few minutes.');
+  if (r.status !== 401 && r.status !== 403 && r.status !== 404) return new Error(`GitHub answered with error ${r.status}. Sync will try again shortly.`);
+  return settingsError(
+    r.status === 401 ? 'GitHub rejected this token. It may have expired or been deleted. Create a new one with the link above and paste it here.'
+    : step === 'see' ? `This token can't see ${gh.owner}/${gh.repo}. Check the username and repository name. Then on GitHub, edit the token: under Repository access choose "Only select repositories" and pick ${gh.repo}.`
+    : step === 'save' ? `The token can read ${gh.repo} but isn't allowed to save to it. On GitHub, edit the token: under Permissions set Contents to "Read and write".`
+    : `The token can see ${gh.repo} but isn't allowed to read its files. On GitHub, edit the token: under Permissions set Contents to "Read and write".`);
+}
 
 // The token can't see the repo. Ask GitHub whose token it is, to tell "made on another account" from "repo not picked".
 async function whyHidden(repo) {
@@ -570,11 +579,11 @@ async function whyHidden(repo) {
   const u = await ghApi('user').catch(() => null);
   const login = u?.ok ? (await u.json()).login : '';
   if (login && login.toLowerCase() !== gh.owner.toLowerCase())
-    return new Error(`This token was made on the GitHub account "${login}", but ${gh.repo} belongs to "${gh.owner}". Sign in to GitHub as ${gh.owner}, create the token there, and paste it in sync settings.`);
+    return settingsError(`This token was made on the GitHub account "${login}", but ${gh.repo} belongs to "${gh.owner}". Sign in to GitHub as ${gh.owner}, create the token there with the link above, and paste it here.`);
   if (gh.token.startsWith('ghp_') && !(u?.headers.get('x-oauth-scopes') || '').split(/,\s*/).includes('repo'))
-    return new Error(`This is a classic token without the "repo" scope, so it can't see private repositories. Create a fine-grained token instead (the link is in sync settings).`);
+    return settingsError(`This is a classic token without the "repo" scope, so it can't see private repositories. Create a fine-grained token with the link above instead.`);
   if (login)
-    return new Error(`The token is on the right account (${login}) but doesn't include ${gh.repo}. On GitHub, edit the token: under Repository access choose "Only select repositories", pick ${gh.repo}, then click Update at the bottom of the page.`);
+    return settingsError(`The token is on the right account (${login}) but doesn't include ${gh.repo}. Create a new token with the link above: under Repository access choose "Only select repositories" and tick ${gh.repo} before clicking Generate token.`);
   return ghError(repo, 'see');
 }
 
@@ -607,26 +616,33 @@ function merge(local, remote) {
   return out;
 }
 
+// One full round: pull, merge, push. Throws, so callers decide how to report problems.
+async function syncOnce() {
+  for (let tries = 0; ; tries++) {
+    const remote = await pull();
+    items = merge(items, remote.items);
+    saveLocal(); render();
+    // Up to date only if the file exists; the first sync always writes it, which also proves the token can save
+    if (remote.sha && Object.keys(remote.items).length === items.size && [...items].every(([id, v]) => remote.items[id]?.updated === v.updated)) return;
+    const r = await push(remote.sha, items);
+    if (r.ok) return;
+    if ((r.status !== 409 && r.status !== 422) || tries === 3) throw ghError(r, 'save'); // 409/422: another device saved first, so merge again
+  }
+}
+const syncedNow = () => setSync('Synced ' + new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }), true);
+
 let syncing = false, again = false, syncTimer;
-function syncSoon(ms = 4000) { if (!gh) return; clearTimeout(syncTimer); syncTimer = setTimeout(sync, ms); }
+function syncSoon(ms = 4000) { if (!gh || gh.bad) return; clearTimeout(syncTimer); syncTimer = setTimeout(sync, ms); }
 async function sync() {
-  if (!gh) return;
+  if (!gh || gh.bad) return; // paused: retrying a refused token would only repeat the same error
   if (syncing) { again = true; return; }
   syncing = true; clearTimeout(syncTimer); setSync('Syncing…');
   try {
-    for (let tries = 0; ; tries++) {
-      const remote = await pull();
-      items = merge(items, remote.items);
-      saveLocal(); render();
-      const ids = Object.keys(remote.items);
-      if (ids.length === items.size && [...items].every(([id, v]) => remote.items[id]?.updated === v.updated)) break; // GitHub is up to date
-      const r = await push(remote.sha, items);
-      if (r.ok) break;
-      if ((r.status !== 409 && r.status !== 422) || tries === 3) throw ghError(r, 'save'); // 409/422: another device saved first, so merge again
-    }
-    setSync('Synced ' + new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }), true);
+    await syncOnce();
+    syncedNow();
   } catch (e) {
-    if (!navigator.onLine) setSync('Offline · saved on this device');
+    if (e.settings) { gh.bad = e.message; saveGh(); setSync('Sync paused · tap to fix'); openSync(); }
+    else if (!navigator.onLine) setSync('Offline · saved on this device');
     else { setSync('Sync problem · tap to fix'); toast(e.message); }
   } finally {
     syncing = false;
@@ -637,14 +653,19 @@ addEventListener('online', () => syncSoon(0));
 setInterval(() => !document.hidden && sync(), 120000);
 
 const dlg = $('#sync-dlg');
-$('#sync').onclick = () => {
+function openSync() {
+  const bad = gh?.bad;
+  $('#gh-msg').textContent = bad || ''; $('#gh-msg').hidden = !bad;
+  if (dlg.open) return; // already open: show the problem, but don't wipe what's being typed
   $('#gh-owner').value = gh?.owner || ''; $('#gh-repo').value = gh?.repo || ''; $('#gh-token').value = '';
-  $('#gh-token').required = !gh;
-  $('#gh-token-l').textContent = gh ? 'Token (paste a new one, or leave empty to keep the current one)' : 'Token';
+  $('#gh-token').required = !gh || !!bad;
+  $('#gh-token-l').textContent = !gh ? 'Token' : bad ? 'New token' : 'Token (paste a new one, or leave empty to keep the current one)';
   $('#gh-off').hidden = !gh;
   tokenLink();
-  dlg.showModal();
-};
+  if (!dlg.open) dlg.showModal();
+  (bad ? $('#gh-token') : gh ? null : $('#gh-owner'))?.focus();
+}
+$('#sync').onclick = openSync;
 // Pre-filled token page: name, owner, one-year expiry and Contents read/write (GitHub can't pre-pick the repository)
 function tokenLink() {
   const p = new URLSearchParams({ name: 'LifeIG', description: 'Sync for the LifeIG app', expires_in: '366', contents: 'write' });
@@ -654,15 +675,28 @@ function tokenLink() {
 }
 $('#gh-owner').addEventListener('input', tokenLink);
 $('#gh-cancel').onclick = () => dlg.close();
-$('#sync-form').onsubmit = e => {
+// Connect: try the settings for real before keeping them. Problems show right here in the window.
+$('#sync-form').onsubmit = async e => {
   e.preventDefault();
-  gh = { owner: $('#gh-owner').value.trim(), repo: $('#gh-repo').value.trim(), token: $('#gh-token').value.trim() || gh.token };
-  try { localStorage.setItem(KEY + '.gh', JSON.stringify(gh)); } catch {}
-  dlg.close(); sync();
+  if (syncing) return;
+  const prev = gh, btn = $('#gh-connect');
+  gh = { owner: $('#gh-owner').value.trim(), repo: $('#gh-repo').value.trim(), token: $('#gh-token').value.trim() || prev.token };
+  syncing = true; clearTimeout(syncTimer);
+  btn.disabled = true; btn.textContent = 'Checking…'; $('#gh-msg').hidden = true;
+  try {
+    await syncOnce();
+    saveGh(); dlg.close(); syncedNow();
+  } catch (err) {
+    gh = prev; // keep whatever was saved before; nothing new is stored until it works
+    $('#gh-msg').textContent = err.message; $('#gh-msg').hidden = false;
+    (err.settings ? $('#gh-token') : btn).focus();
+  } finally {
+    syncing = false; btn.disabled = false; btn.textContent = 'Connect and sync';
+    if (again) { again = false; syncSoon(0); }
+  }
 };
 $('#gh-off').onclick = () => {
-  gh = null; clearTimeout(syncTimer);
-  try { localStorage.removeItem(KEY + '.gh'); } catch {}
+  gh = null; saveGh(); clearTimeout(syncTimer);
   setSync('Saved on this device only'); dlg.close();
 };
 
@@ -1059,6 +1093,7 @@ function renderTodo() {
 $('#stamp').textContent = fmtD(today(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 loadLocal();
 show(view);
+if (gh?.bad) setSync('Sync paused · tap to fix');
 sync();
 // Another open window saved: take its copy so neither overwrites the other
 addEventListener('storage', e => { if (e.key === KEY) { loadLocal(); render(); } });
