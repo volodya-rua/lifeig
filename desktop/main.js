@@ -2,6 +2,9 @@
 const { app, BrowserWindow, shell, nativeTheme } = require('electron');
 const fs = require('fs'), path = require('path');
 
+// Windows shows reminder notifications under this app's name and icon
+app.setAppUserModelId('io.github.volodyarua.lifeig');
+
 // One window only, so two copies never overwrite each other's saved data.
 if (!app.requestSingleInstanceLock()) app.quit();
 else {

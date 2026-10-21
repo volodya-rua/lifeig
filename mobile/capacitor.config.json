@@ -1,5 +1,11 @@
 {
   "appId": "io.github.volodyarua.lifeig",
   "appName": "LifeIG",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_lifeig",
+      "iconColor": "#2B40C4"
+    }
+  }
 }

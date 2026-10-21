@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400..700;1,400..700&family=Martian+Mono:wdth,wght@75..112.5,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap">
+<!-- Only GitHub may be contacted; everything else (fonts included) ships with the app -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.github.com; object-src 'none'; base-uri 'none'">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: a paper sheet on a desk, with planner index tabs down its right edge. On phones the tabs fold into a strip above the sheet. */
 :root{
@@ -43,7 +43,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .brand{font:700 1.45rem/1 var(--f-head);letter-spacing:-.03em}
 .brand span{color:var(--blue)}
 .stamp{font:500 .7rem var(--f-num);letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
-.sync{margin-left:auto;font-size:.8rem;color:var(--soft);display:flex;align-items:center;gap:7px;background:none;border:0;padding:4px 2px;cursor:pointer}
+.sync{font-size:.8rem;color:var(--soft);display:flex;align-items:center;gap:7px;background:none;border:0;padding:4px 2px;cursor:pointer}
 .sync:hover{color:var(--ink)}
 .sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--soft)}
 .sync[data-on]::before{background:var(--earn)}
@@ -150,6 +150,8 @@ input::placeholder,textarea::placeholder{color:var(--soft);opacity:.8}
 .bform{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
 .bform .cu{grid-column:span 4} .bform .no,.bform .am,.bform .dt{grid-column:span 2}
 .bform .st{grid-column:span 2;align-self:end;justify-self:start}
+.bform .du{grid-column:span 2} .bform .fr{grid-column:span 4}
+.bill .main .late{color:var(--spend);font-weight:600}
 .bform .wf{grid-column:1/-1}
 .seg input[value="paid"]:checked + label{background:var(--earn)}
 .filters{display:flex;flex-wrap:wrap;gap:6px;margin:22px 0 4px}
@@ -183,7 +185,63 @@ input::placeholder,textarea::placeholder{color:var(--soft);opacity:.8}
 .cuform{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .cuform .wide{grid-column:1/-1}
 @media (max-width:900px){.bills{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:520px){.bform .cu{grid-column:1/-1} .bform .no,.bform .am,.bform .dt,.bform .st{grid-column:span 3}}
+@media (max-width:520px){.bform .cu,.bform .fr{grid-column:1/-1} .bform .no,.bform .am,.bform .dt,.bform .du,.bform .st{grid-column:span 3}}
+
+/* money: six-month chart */
+.trend{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;align-items:end;height:110px;border-bottom:1px solid var(--rule)}
+.trend button{display:flex;align-items:flex-end;justify-content:center;gap:3px;height:100%;padding:0 2px;background:none;border:0;border-radius:3px 3px 0 0;cursor:pointer}
+.trend button:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.trend button[aria-current="true"]{background:color-mix(in srgb,var(--blue) 10%,transparent)}
+.trend i{width:min(14px,42%);min-height:1px;border-radius:2px 2px 0 0}
+.trend .e{background:var(--earn)} .trend .s{background:var(--spend)}
+.trend-x{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:5px 0 30px;text-align:center;font:500 .6rem var(--f-num);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0 0 10px;font-size:.75rem;color:var(--soft)}
+.legend span::before{content:"";display:inline-block;width:8px;height:8px;margin-right:5px;border-radius:2px;background:var(--c)}
+.legend .max{margin-left:auto;font-family:var(--f-num);font-size:.68rem}
+.legend .max::before{display:none}
+
+/* search */
+.search-dlg{width:min(640px,calc(100vw - 32px));padding:0}
+.search-dlg form{gap:0}
+#q{border:0;border-bottom:1px solid var(--rule);border-radius:0;padding:18px 20px;font-size:1.1rem;background:none}
+#q:focus{outline:none;border-bottom-color:var(--blue)}
+.results{list-style:none;margin:0;padding:6px 8px 12px;max-height:min(60vh,520px);overflow:auto}
+.results .sec{padding:12px 12px 4px;font:500 .64rem var(--f-num);letter-spacing:.09em;text-transform:uppercase;color:var(--soft)}
+.results button{display:grid;gap:2px;width:100%;padding:9px 12px;text-align:left;background:none;border:0;border-radius:4px;cursor:pointer}
+.results button:hover,.results button:focus-visible{background:color-mix(in srgb,var(--blue) 9%,var(--sheet));outline:none}
+.results b{font-weight:600;overflow-wrap:anywhere}
+.results span{font-size:.82rem;color:var(--soft);overflow-wrap:anywhere}
+.results mark{background:color-mix(in srgb,var(--gold) 45%,transparent);color:inherit;border-radius:2px}
+.results .none{padding:16px 12px}
+@keyframes flash{from{background:color-mix(in srgb,var(--gold) 35%,transparent)}}
+.flash{animation:flash 1.6s ease-out}
+
+/* settings */
+.set-sec{display:grid;gap:10px;padding:16px 0;border-top:1px solid var(--rule)}
+.set-sec h3{margin:0;font:600 1rem var(--f-head)}
+.set-sec p{margin:0}
+.set-sec .row select{width:auto}
+.check{display:flex;align-items:center;gap:10px;font-size:.9rem;cursor:pointer}
+.pin-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.pin-form .row{grid-column:1/-1}
+.ok-msg{color:var(--earn);font-size:.85rem;margin:0}
+
+/* lock screen */
+.lock{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--desk);
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.lock form{display:grid;gap:12px;width:min(320px,100%);padding:28px;background:var(--sheet);border:1px solid var(--rule);border-radius:4px}
+.lock .brand{font-size:1.9rem;margin-bottom:6px}
+#lock-pin{font:500 1.4rem var(--f-num);letter-spacing:.3em;text-align:center;padding:12px}
+#lock-msg{margin:0;min-height:1.3em;font-size:.85rem;color:var(--spend)}
+
+/* top bar buttons */
+.topbtn{display:flex;align-items:center;gap:8px;padding:5px 12px;background:none;border:1px solid var(--rule);border-radius:999px;font-size:.8rem;color:var(--soft);cursor:pointer}
+.topbtn:hover{color:var(--ink);border-color:var(--soft)}
+.topbtn kbd{font:500 .62rem var(--f-num);padding:1px 5px;border:1px solid var(--rule);border-radius:3px}
+#open-search{margin-left:auto}
+@media (hover:none),(max-width:760px){.topbtn kbd{display:none}}
+/* Phones: name and date on the first line, then Search, Settings and the sync status together */
+@media (max-width:520px){.top .stamp{flex:1 0 55%} #open-search{margin-left:0} .top .sync{margin-left:auto}}
 
 /* journal */
 .journal{display:grid;grid-template-columns:270px minmax(0,1fr);gap:36px;align-items:start}
@@ -292,7 +350,7 @@ dialog a{color:var(--blue)}
 .btn:disabled{opacity:.6;cursor:progress}
 .row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .row .x{margin-left:auto}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -301,6 +359,8 @@ dialog a{color:var(--blue)}
   <header class="top">
     <div class="brand">Life<span>IG</span></div>
     <div class="stamp" id="stamp"></div>
+    <button class="topbtn" id="open-search" aria-haspopup="dialog">Search <kbd>Ctrl K</kbd></button>
+    <button class="topbtn" id="open-settings" aria-haspopup="dialog">Settings</button>
     <button class="sync" id="sync" aria-haspopup="dialog">Saved on this device only</button>
   </header>
 
@@ -346,6 +406,10 @@ dialog a{color:var(--blue)}
             <ul class="entries" id="m-list"></ul>
           </div>
           <aside class="where">
+            <h2>Last 6 months</h2>
+            <div class="legend"><span style="--c:var(--earn)">Earned</span><span style="--c:var(--spend)">Spent</span><span class="max" id="m-max"></span></div>
+            <div class="trend" id="m-trend"></div>
+            <div class="trend-x" id="m-trend-x" aria-hidden="true"></div>
             <h2>Where it came from</h2>
             <ul class="bars" id="m-in"></ul>
             <h2>Where it went</h2>
@@ -369,18 +433,20 @@ dialog a{color:var(--blue)}
               <label class="f cu">Customer<input id="b-customer" name="customer" list="b-custs" required pattern=".*\S.*" maxlength="80" placeholder="Pick or type a new name"></label>
               <label class="f no">Bill no.<input id="b-no" name="no" required pattern=".*\S.*" maxlength="30" class="num"></label>
               <label class="f am">Amount<input id="b-amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required placeholder="0.00" class="num"></label>
-              <label class="f dt">Date<input id="b-date" name="date" type="date" required></label>
+              <label class="f dt">Bill date<input id="b-date" name="date" type="date" required></label>
+              <label class="f du">Due by<input id="b-due" name="due" type="date"></label>
               <div class="seg st" role="radiogroup" aria-label="Payment">
                 <input type="radio" name="status" id="b-s-due" value="due" checked><label for="b-s-due">Unpaid</label>
                 <input type="radio" name="status" id="b-s-paid" value="paid"><label for="b-s-paid">Paid</label>
               </div>
-              <label class="f wf">What it was for<input id="b-what" name="what" maxlength="160" placeholder="Optional"></label>
+              <label class="f fr">What it was for<input id="b-what" name="what" maxlength="160" placeholder="Optional"></label>
               <div class="row wf"><button class="btn" id="b-save">Add bill</button><button type="button" class="ghost" id="b-cancel" hidden>Cancel</button></div>
               <datalist id="b-custs"></datalist>
             </form>
             <div class="filters">
               <button class="chipbtn" data-bf="all">All</button>
               <button class="chipbtn" data-bf="due">Unpaid</button>
+              <button class="chipbtn" data-bf="late">Overdue</button>
               <button class="chipbtn" data-bf="paid">Paid</button>
               <button class="chipbtn" id="b-who" data-cust="" aria-pressed="true" hidden></button>
             </div>
@@ -444,6 +510,16 @@ dialog a{color:var(--blue)}
               <label class="f wide">What's the plan?<input id="c-title" name="title" required pattern=".*\S.*" maxlength="120" placeholder="Gym, call home, dentist…"></label>
               <label class="f">From<input id="c-time" name="time" type="time"></label>
               <label class="f">To<input id="c-end" name="end" type="time"></label>
+              <label class="f wide">Remind me
+                <select id="c-remind" name="remind">
+                  <option value="">No reminder</option>
+                  <option value="0">When it starts</option>
+                  <option value="10">10 minutes before</option>
+                  <option value="30">30 minutes before</option>
+                  <option value="60">1 hour before</option>
+                  <option value="1440">1 day before</option>
+                </select>
+              </label>
               <label class="f wide">Repeats
                 <select id="c-repeat" name="repeat">
                   <option value="">Doesn't repeat</option>
@@ -492,6 +568,70 @@ dialog a{color:var(--blue)}
   </div>
 </div>
 <div class="toast" id="toast" role="alert" hidden></div>
+
+<dialog id="search-dlg" class="search-dlg" aria-label="Search">
+  <form id="search-form" autocomplete="off">
+    <input id="q" type="search" placeholder="Search money, bills, customers, journal, plans, to-dos" aria-label="Search everything" spellcheck="false">
+    <ul class="results" id="results"></ul>
+  </form>
+</dialog>
+
+<dialog id="settings-dlg" aria-labelledby="settings-h">
+  <form id="settings-form" autocomplete="off">
+    <h2 id="settings-h">Settings</h2>
+
+    <section class="set-sec" aria-labelledby="lock-h">
+      <h3 id="lock-h">App lock</h3>
+      <p id="lock-state"></p>
+      <div class="pin-form" id="pin-form" hidden>
+        <label class="f" id="pin-cur-l">Current PIN<input id="pin-cur" type="password" inputmode="numeric" maxlength="8"></label>
+        <label class="f" id="pin-new-l">New PIN (4–8 digits)<input id="pin-new" type="password" inputmode="numeric" maxlength="8"></label>
+        <label class="f" id="pin-rep-l">Repeat new PIN<input id="pin-rep" type="password" inputmode="numeric" maxlength="8"></label>
+        <p class="gh-msg" id="pin-msg" role="alert" hidden></p>
+        <div class="row"><button type="button" class="btn" id="pin-save">Save PIN</button><button type="button" class="ghost" id="pin-cancel">Cancel</button></div>
+      </div>
+      <div class="row" id="pin-actions">
+        <button type="button" class="btn" id="pin-set">Set a PIN</button>
+        <button type="button" class="ghost" id="pin-change">Change PIN</button>
+        <button type="button" class="ghost" id="pin-off">Turn off</button>
+        <button type="button" class="ghost" id="lock-now">Lock now</button>
+      </div>
+      <label class="check" id="lock-after-l">Lock again after
+        <select id="lock-after">
+          <option value="0">leaving the app</option>
+          <option value="60000">1 minute away</option>
+          <option value="300000">5 minutes away</option>
+          <option value="900000">15 minutes away</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="set-sec" aria-labelledby="rem-h">
+      <h3 id="rem-h">Reminders</h3>
+      <p id="rem-state"></p>
+      <label class="check"><input type="checkbox" id="todo-remind"> Remind me at 9:00 AM about to-dos due that day</label>
+      <div class="row"><button type="button" class="ghost" id="rem-allow">Allow notifications</button><button type="button" class="ghost" id="rem-exact" hidden>Exact timing</button></div>
+    </section>
+
+    <section class="set-sec" aria-labelledby="sync-h2">
+      <h3 id="sync-h2">Sync</h3>
+      <p id="sync-state"></p>
+      <div class="row"><button type="button" class="ghost" id="open-sync">Sync settings</button></div>
+    </section>
+
+    <div class="row"><button type="button" class="btn" id="settings-close">Done</button><span class="stamp" id="version"></span></div>
+  </form>
+</dialog>
+
+<div class="lock" id="lock" hidden>
+  <form id="lock-form" autocomplete="off">
+    <div class="brand">Life<span>IG</span></div>
+    <label class="f" for="lock-pin">Enter your PIN</label>
+    <input id="lock-pin" type="password" inputmode="numeric" maxlength="8" required>
+    <p id="lock-msg" role="alert"></p>
+    <button class="btn">Unlock</button>
+  </form>
+</div>
 
 <dialog id="sync-dlg" aria-labelledby="sync-h">
   <form id="sync-form" autocomplete="off">
@@ -656,7 +796,7 @@ const dlg = $('#sync-dlg');
 function openSync() {
   const bad = gh?.bad;
   $('#gh-msg').textContent = bad || ''; $('#gh-msg').hidden = !bad;
-  if (dlg.open) return; // already open: show the problem, but don't wipe what's being typed
+  if (dlg.open || locked) return; // already open: show the problem, but don't wipe what's being typed. Locked: wait for the PIN.
   $('#gh-owner').value = gh?.owner || ''; $('#gh-repo').value = gh?.repo || ''; $('#gh-token').value = '';
   $('#gh-token').required = !gh || !!bad;
   $('#gh-token-l').textContent = !gh ? 'Token' : bad ? 'New token' : 'Token (paste a new one, or leave empty to keep the current one)';
@@ -719,6 +859,7 @@ function render() {
   const a = document.activeElement, field = a?.closest?.('.t-edit') && a.name; // keep the cursor in a to-do being edited
   ({ money: renderMoney, bills: renderBills, journal: renderJournal, calendar: renderCal, todo: renderTodo })[view]();
   if (field) $('#' + view).querySelector(`.t-edit [name="${field}"]`)?.focus();
+  scheduleReminders(); // data may have changed; cheap, debounced, and a no-op when nothing moved
 }
 
 // Two-tap delete/skip: the first tap asks, the second within 3s does it.
@@ -774,6 +915,19 @@ function bars(el, list, type, sum, none) {
   el.innerHTML = rows.map(([w, a]) => `<li class="${type}"><span>${esc(w)}</span><b>${money(a)}<small>${Math.round(a / sum * 100)}%</small></b><i style="--w:${(a / rows[0][1] * 100).toFixed(1)}%"></i></li>`).join('')
     || `<li class="none">${none}</li>`;
 }
+// Earned vs spent for the six months ending at the month on screen; tap a month to open it.
+function trend(entries) {
+  const months = [-5, -4, -3, -2, -1, 0].map(n => addMonth(mMonth, n));
+  const sums = months.map(m => ['earn', 'spend'].map(t => entries.filter(e => e.type === t && e.date.startsWith(m)).reduce((s, e) => s + e.amount, 0)));
+  const max = Math.max(...sums.flat()) || 1;
+  $('#m-max').textContent = sums.flat().some(Boolean) ? 'Top of chart: ' + money(max) : '';
+  $('#m-trend').innerHTML = months.map((m, i) => `<button type="button" data-month="${m}" aria-current="${m === mMonth}"
+    aria-label="${monthLabel(m)}: earned ${money(sums[i][0])}, spent ${money(sums[i][1])}" title="${monthLabel(m)}\nEarned ${money(sums[i][0])}\nSpent ${money(sums[i][1])}">`
+    + `<i class="e" style="height:${(sums[i][0] / max * 100).toFixed(1)}%"></i><i class="s" style="height:${(sums[i][1] / max * 100).toFixed(1)}%"></i></button>`).join('');
+  $('#m-trend-x').innerHTML = months.map(m => `<span>${fmtD(m + '-01', { month: 'short' })}</span>`).join('');
+}
+$('#m-trend').onclick = e => { const b = e.target.closest('[data-month]'); if (b) { mMonth = b.dataset.month; renderMoney(); } };
+
 function renderMoney() {
   $('#m-label').textContent = monthLabel(mMonth);
   $('#m-cur').value = cur();
@@ -781,7 +935,9 @@ function renderMoney() {
   // Paid bills count as money earned on the day they were paid. They're read from Bills, never copied, so edits there show up here.
   const fromBills = all('bill').filter(b => b.paid).map(b => ({ id: b.id, bill: true, type: 'earn', amount: b.amount, where: custName(b.customer),
     note: `Bill #${b.no}${b.what ? ' · ' + b.what : ''}`, date: b.paidOn || b.date, created: b.created }));
-  const list = [...all('money'), ...fromBills].filter(e => e.date.startsWith(mMonth)).sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created);
+  const everything = [...all('money'), ...fromBills];
+  const list = everything.filter(e => e.date.startsWith(mMonth)).sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created);
+  trend(everything);
   const total = t => list.filter(e => e.type === t).reduce((s, e) => s + e.amount, 0);
   const earned = total('earn'), spent = total('spend'), net = earned - spent;
   $('#m-kicker').textContent = plural(list.length, 'entry', 'entries') + ' this month';
@@ -795,7 +951,7 @@ function renderMoney() {
   let html = '', last = '';
   for (const e of list) {
     if (e.date !== last) html += `<li class="day-h">${dayLabel(last = e.date)}</li>`;
-    html += `<li class="entry ${e.type}"><div><b>${esc(e.where)}</b>${e.note ? `<span>${esc(e.note)}</span>` : ''}</div>`
+    html += `<li class="entry ${e.type}" data-id="${e.id}"><div><b>${esc(e.where)}</b>${e.note ? `<span>${esc(e.note)}</span>` : ''}</div>`
       + `<em>${e.type === 'earn' ? '+' : '−'}${money(e.amount)}</em>`
       + (e.bill ? `<span class="tag" title="From Bills. Mark the bill unpaid there to remove it.">Bill</span>`
                 : `<button class="x" data-del="${e.id}" aria-label="Delete ${esc(e.where)}">×</button>`) + `</li>`;
@@ -807,6 +963,7 @@ function renderMoney() {
 let bEdit = null, bFilter = 'all', bCust = null, cEdit = null;
 const bForm = $('#b-form'), cForm = $('#cu-form');
 const custName = id => get(id)?.name || 'Unknown customer';
+const isLate = b => !b.paid && !!b.due && b.due < today();
 $('#b-date').value = today();
 // Next bill number follows the latest one: INV-0042 -> INV-0043
 function nextNo() {
@@ -823,7 +980,7 @@ function customerFor(name) { // an existing customer with that name, or a new on
 function clearBill() {
   bEdit = null;
   const el = bForm.elements;
-  el.customer.value = el.no.value = el.amount.value = el.what.value = ''; el.status.value = 'due';
+  el.customer.value = el.no.value = el.amount.value = el.what.value = el.due.value = ''; el.status.value = 'due';
   $('#b-save').textContent = 'Add bill'; $('#b-cancel').hidden = true;
 }
 function clearCust() { cEdit = null; cForm.reset(); $('#cu-save').textContent = 'Add customer'; $('#cu-cancel').hidden = true; }
@@ -834,7 +991,7 @@ bForm.onsubmit = e => {
   const base = (bEdit && get(bEdit)) || { id: newId(), kind: 'bill', created: Date.now() };
   const date = el.date.value || today(), paid = el.status.value === 'paid';
   const bill = { ...base, customer: customerFor(el.customer.value.trim()), no: el.no.value.trim(), date,
-    amount: Math.round(+el.amount.value * 100) / 100, what: el.what.value.trim(), paid,
+    amount: Math.round(+el.amount.value * 100) / 100, what: el.what.value.trim(), paid, due: el.due.value,
     // the day the money came in: a new bill entered as paid uses its own date; marking an existing one paid uses today
     paidOn: !paid ? '' : base.paid ? (base.paidOn || base.date) : bEdit ? today() : date };
   clearBill(); put(bill);
@@ -858,7 +1015,7 @@ $('#bills').addEventListener('click', e => {
     const x = get(editBill.dataset.bedit); if (!x) return;
     bEdit = x.id;
     el.customer.value = custName(x.customer); el.no.value = x.no; el.date.value = x.date;
-    el.amount.value = x.amount; el.what.value = x.what; el.status.value = x.paid ? 'paid' : 'due';
+    el.amount.value = x.amount; el.what.value = x.what; el.due.value = x.due || ''; el.status.value = x.paid ? 'paid' : 'due';
     $('#b-save').textContent = 'Save changes'; $('#b-cancel').hidden = false;
     bForm.scrollIntoView({ block: 'nearest' }); el.amount.focus();
   } else if (pay) {
@@ -885,8 +1042,8 @@ function renderBills() {
   $('#b-custs').innerHTML = custs.map(c => `<option value="${esc(c.name)}">`).join('');
 
   const scope = bills.filter(b => !bCust || b.customer === bCust);
-  const received = sum(scope.filter(b => b.paid)), owed = sum(scope.filter(b => !b.paid));
-  $('#b-kicker').textContent = bCust ? `${plural(scope.length, 'bill')} for ${custName(bCust)}` : plural(bills.length, 'bill');
+  const received = sum(scope.filter(b => b.paid)), owed = sum(scope.filter(b => !b.paid)), nLate = scope.filter(isLate).length;
+  $('#b-kicker').textContent = (bCust ? `${plural(scope.length, 'bill')} for ${custName(bCust)}` : plural(bills.length, 'bill')) + (nLate ? ` · ${nLate} overdue` : '');
   $('#b-total').textContent = money(received + owed);
   $('#b-paid').textContent = money(received);
   $('#b-owed').textContent = money(owed);
@@ -895,14 +1052,17 @@ function renderBills() {
   $('#b-who').dataset.cust = bCust || '';
   $('#b-who').textContent = bCust ? custName(bCust) + '  ×' : '';
 
-  const list = scope.filter(b => bFilter === 'all' || (bFilter === 'paid') === b.paid)
+  const list = scope.filter(b => bFilter === 'all' || (bFilter === 'late' ? isLate(b) : (bFilter === 'paid') === b.paid))
     .sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created);
-  $('#b-list').innerHTML = list.map(b => `<li class="bill"><button class="main" data-bedit="${b.id}" title="Edit bill">`
-    + `<b>${esc(custName(b.customer))}</b><span><i>#${esc(b.no)}</i> · ${shortDate(b.date)}${b.what ? ' · ' + esc(b.what) : ''}</span></button>`
+  const dueNote = b => b.paid || !b.due ? ''
+    : isLate(b) ? ` · <strong class="late">Overdue ${plural(Math.round((parse(today()) - parse(b.due)) / 864e5), 'day')}</strong>`
+    : ` · due ${b.due === today() ? 'today' : shortDate(b.due)}`;
+  $('#b-list').innerHTML = list.map(b => `<li class="bill" data-id="${b.id}"><button class="main" data-bedit="${b.id}" title="Edit bill">`
+    + `<b>${esc(custName(b.customer))}</b><span><i>#${esc(b.no)}</i> · ${shortDate(b.date)}${b.what ? ' · ' + esc(b.what) : ''}${dueNote(b)}</span></button>`
     + `<em>${money(b.amount)}</em><button class="pill ${b.paid ? 'paid' : 'due'}" data-pay="${b.id}" title="Mark as ${b.paid ? 'unpaid' : 'paid'}">${b.paid ? 'Paid' : 'Unpaid'}</button>`
     + `<button class="x" data-del="${b.id}" aria-label="Delete bill ${esc(b.no)}">×</button></li>`).join('')
     || (bills.length
-      ? `<li class="none">No ${bFilter === 'all' ? '' : bFilter === 'paid' ? 'paid ' : 'unpaid '}bills${bCust ? ' for ' + esc(custName(bCust)) : ''}.</li>`
+      ? `<li class="none">No ${{ all: '', paid: 'paid ', due: 'unpaid ', late: 'overdue ' }[bFilter]}bills${bCust ? ' for ' + esc(custName(bCust)) : ''}.</li>`
       : `<li class="empty"><b>No bills yet</b>Add one with the form above. If you type a new customer's name, they're added to your customers list, where you can fill in their details.</li>`);
 
   const rows = custs.map(c => {
@@ -911,7 +1071,7 @@ function renderBills() {
   }).sort((a, b) => b.owed - a.owed || a.c.name.localeCompare(b.c.name));
   $('#cu-list').innerHTML = rows.map(({ c, n, total, owed }) => {
     const contact = [c.phone && `<a href="tel:${esc(c.phone.replace(/[^\d+]/g, ''))}">${esc(c.phone)}</a>`, c.email && `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`].filter(Boolean).join(' · ');
-    return `<li class="cust"><button class="c-name" data-cust="${c.id}" aria-pressed="${c.id === bCust}" title="Show only their bills">${esc(c.name)}</button>`
+    return `<li class="cust" data-id="${c.id}"><button class="c-name" data-cust="${c.id}" aria-pressed="${c.id === bCust}" title="Show only their bills">${esc(c.name)}</button>`
       + (contact ? `<div class="meta">${contact}</div>` : '') + (c.address ? `<div class="meta">${esc(c.address)}</div>` : '') + (c.note ? `<div class="meta">${esc(c.note)}</div>` : '')
       + `<div class="tot">${plural(n, 'bill')} · ${money(total)}${owed ? ` · <span class="owe">${money(owed)} unpaid</span>` : ''}</div>`
       + `<div class="acts"><button class="ghost sm" data-cedit="${c.id}">Edit details</button>${n ? '' : `<button class="x" data-del="${c.id}" aria-label="Delete ${esc(c.name)}">×</button>`}</div></li>`;
@@ -975,7 +1135,7 @@ const todoRow = x => x.id === tEdit
     + `<input name="text" aria-label="Task" required pattern=".*\\S.*" maxlength="200" value="${esc(tDraft?.text ?? x.text)}">`
     + `<input name="due" type="date" class="num" aria-label="Due date (optional)" value="${tDraft?.due ?? x.due ?? ''}">`
     + `<button class="btn">Save</button><button type="button" class="ghost" data-cancel>Cancel</button></form></li>`
-  : `<li class="todo${x.done ? ' done' : ''}"><input type="checkbox" data-toggle="${x.id}" aria-label="Done: ${esc(x.text)}"${x.done ? ' checked' : ''}>`
+  : `<li class="todo${x.done ? ' done' : ''}" data-id="${x.id}"><input type="checkbox" data-toggle="${x.id}" aria-label="Done: ${esc(x.text)}"${x.done ? ' checked' : ''}>`
     + `<button class="t-text" data-edit="${x.id}" title="Edit">${esc(x.text)}</button>${x.due ? `<time datetime="${x.due}">${x.due === today() ? 'Today' : shortDate(x.due)}</time>` : '<span></span>'}`
     + `<button class="x" data-del="${x.id}" aria-label="Delete task">×</button></li>`;
 const stopEdit = () => { tEdit = tDraft = null; render(); };
@@ -1002,6 +1162,7 @@ let cMonth = today().slice(0, 7), cDay = today();
 const byTime = (a, b) => (a.time || '').localeCompare(b.time || '');
 const ord = n => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
 const REPEAT = { daily: 'Every day', weekdays: 'Every weekday', weekly: 'Every week', monthly: 'Every month', yearly: 'Every year' };
+const REMIND = { 0: 'when it starts', 10: '10 min before', 30: '30 min before', 60: '1 hour before', 1440: '1 day before' };
 // Does event e happen on day k? Monthly events on the 29th–31st skip shorter months.
 function occurs(e, k) {
   if (k < e.date || (e.until && k > e.until) || e.skip?.includes(k)) return false;
@@ -1037,9 +1198,10 @@ function renderCal() {
 
   $('#c-day-k').textContent = cDay === t ? 'Today' : fmtD(cDay, { weekday: 'long' });
   $('#c-day').textContent = fmtD(cDay, { day: 'numeric', month: 'long', year: 'numeric' });
-  $('#c-plans').innerHTML = events.filter(e => occurs(e, cDay)).sort(byTime).map(e => `<li class="plan c-${e.color}"><div>`
+  $('#c-plans').innerHTML = events.filter(e => occurs(e, cDay)).sort(byTime).map(e => `<li class="plan c-${e.color}" data-id="${e.id}"><div>`
     + `<time>${e.time ? clock(e.time) + (e.end ? ' – ' + clock(e.end) : '') : 'Any time'}</time><b>${esc(e.title)}</b>`
-    + (e.repeat ? `<small>${REPEAT[e.repeat]}${e.until ? ' until ' + shortDate(e.until) : ''}</small>` : '') + `</div><div class="acts">`
+    + (e.repeat ? `<small>${REPEAT[e.repeat]}${e.until ? ' until ' + shortDate(e.until) : ''}</small>` : '')
+    + (e.remind != null && e.remind !== '' ? `<small>Reminder: ${REMIND[e.remind]}</small>` : '') + `</div><div class="acts">`
     + (e.repeat ? `<button class="x txt" data-skip="${e.id}" data-ask="Skip?">Skip this day</button>` : '')
     + `<button class="x" data-del="${e.id}" data-ask="${e.repeat ? 'Delete all?' : 'Delete?'}" aria-label="Delete ${e.repeat ? 'every repeat of ' : ''}${esc(e.title)}">×</button></div></li>`).join('')
     || `<li class="none">Nothing planned yet. Add something below.</li>`;
@@ -1062,8 +1224,9 @@ $('#c-form').onsubmit = e => {
   e.preventDefault();
   const el = e.target.elements;
   put({ id: newId(), kind: 'event', date: cDay, title: el.title.value.trim(), time: el.time.value, end: el.end.value, color: el.color.value,
-        repeat: el.repeat.value, until: el.repeat.value ? el.until.value : '', created: Date.now() });
-  el.title.value = el.time.value = el.end.value = el.repeat.value = el.until.value = '';
+        repeat: el.repeat.value, until: el.repeat.value ? el.until.value : '', remind: el.remind.value, created: Date.now() });
+  if (el.remind.value) askNotify(); // first reminder: ask for permission while the click still counts as the user's
+  el.title.value = el.time.value = el.end.value = el.repeat.value = el.until.value = el.remind.value = '';
   $('#c-until-l').hidden = true;
 };
 $('#c-repeat').onchange = e => $('#c-until-l').hidden = !e.target.value;
@@ -1091,8 +1254,232 @@ function renderTodo() {
 }
 
 $('#stamp').textContent = fmtD(today(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+/* ---------- preferences (this device only) ---------- */
+const VERSION = '1.1.0';
+const prefs = { lockAfter: 0, todoRemind: true };
+try { Object.assign(prefs, JSON.parse(localStorage.getItem(KEY + '.prefs'))); } catch {}
+const savePrefs = () => { try { localStorage.setItem(KEY + '.prefs', JSON.stringify(prefs)); } catch {} };
+
+/* ---------- app lock ---------- */
+// The PIN never leaves this device; only a salted PBKDF2 hash is kept. Wrong guesses slow down after five tries.
+let pinRec = null, locked = false, hiddenAt = 0, guess = { fails: 0, until: 0 };
+try { pinRec = JSON.parse(localStorage.getItem(KEY + '.lock')); } catch {}
+try { Object.assign(guess, JSON.parse(localStorage.getItem(KEY + '.guess'))); } catch {}
+const hex = buf => [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+async function hashPin(pin, salt) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
+  return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: new TextEncoder().encode(salt), iterations: 210000 }, key, 256));
+}
+const pinOk = async pin => !!pinRec && await hashPin(pin, pinRec.salt) === pinRec.hash;
+function lockApp() {
+  if (!pinRec || locked) return;
+  flushJ();
+  locked = true;
+  document.querySelectorAll('dialog[open]').forEach(d => d.close());
+  $('.app').inert = true;
+  $('#lock').hidden = false; $('#lock-pin').value = ''; $('#lock-msg').textContent = '';
+  $('#lock-pin').focus();
+}
+$('#lock-form').onsubmit = async e => {
+  e.preventDefault();
+  const wait = guess.until - Date.now();
+  if (wait > 0) return $('#lock-msg').textContent = `Too many wrong tries. Wait ${Math.ceil(wait / 1000)} seconds.`;
+  if (await pinOk($('#lock-pin').value)) {
+    guess = { fails: 0, until: 0 };
+    locked = false; $('#lock').hidden = true; $('.app').inert = false; render();
+  } else {
+    guess.fails++;
+    const pause = guess.fails >= 5 ? 30000 * 2 ** (guess.fails - 5) : 0; // 30 s, then 1 min, 2 min…
+    guess.until = Date.now() + pause;
+    $('#lock-pin').value = '';
+    $('#lock-msg').textContent = pause ? `Wrong PIN. Try again in ${pause / 1000} seconds.` : 'Wrong PIN. Try again.';
+  }
+  try { localStorage.setItem(KEY + '.guess', JSON.stringify(guess)); } catch {}
+};
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = Date.now(); if (!prefs.lockAfter) lockApp(); }
+  else { if (hiddenAt && Date.now() - hiddenAt >= prefs.lockAfter) lockApp(); scheduleReminders(); }
+});
+
+/* ---------- settings ---------- */
+const setDlg = $('#settings-dlg');
+let pinMode = null; // 'set' | 'change' | 'off' while the PIN form is open
+function renderSettings() {
+  const on = !!pinRec;
+  $('#lock-state').textContent = on ? 'On. LifeIG asks for your PIN when it opens.' : 'Off. Set a PIN so people who pick up your phone or PC can\'t open your entries.';
+  $('#pin-set').hidden = on; $('#pin-change').hidden = $('#pin-off').hidden = $('#lock-now').hidden = !on;
+  $('#lock-after-l').hidden = !on; $('#lock-after').value = String(prefs.lockAfter);
+  $('#todo-remind').checked = prefs.todoRemind;
+  Promise.all([notifyState(), exactState()]).then(([s, exact]) => {
+    $('#rem-state').textContent = (s === 'granted' ? 'Notifications are on. ' : s === 'denied' ? "Notifications are blocked. Allow them for LifeIG in your device's settings. " : 'Allow notifications so plans and to-dos can remind you. ')
+      + (!LN ? 'On a computer they arrive while LifeIG is open.' : exact === 'granted' ? 'They arrive on time, even when LifeIG is closed.' : 'They arrive even when LifeIG is closed, but Android may hold them back a few minutes.');
+    $('#rem-allow').hidden = !s.startsWith('prompt');
+    $('#rem-exact').hidden = !LN || s !== 'granted' || exact === 'granted';
+  });
+  $('#sync-state').textContent = !gh ? 'Not connected. Entries are saved on this device only.' : gh.bad ? 'Paused until the token is fixed.' : `Connected to ${gh.owner}/${gh.repo}.`;
+  $('#version').textContent = 'LifeIG ' + VERSION;
+}
+function setPinMode(mode) {
+  pinMode = mode;
+  $('#pin-form').hidden = !mode; $('#pin-actions').hidden = !!mode;
+  $('#pin-cur-l').hidden = mode === 'set'; $('#pin-new-l').hidden = $('#pin-rep-l').hidden = mode === 'off';
+  $('#pin-save').textContent = mode === 'off' ? 'Turn off app lock' : 'Save PIN';
+  ['#pin-cur', '#pin-new', '#pin-rep'].forEach(s => $(s).value = ''); $('#pin-msg').hidden = true;
+  if (mode) $(mode === 'set' ? '#pin-new' : '#pin-cur').focus();
+}
+$('#open-settings').onclick = () => { if (locked) return; setPinMode(null); renderSettings(); setDlg.showModal(); };
+$('#settings-form').onsubmit = e => e.preventDefault();
+$('#settings-close').onclick = () => setDlg.close();
+$('#open-sync').onclick = () => { setDlg.close(); openSync(); };
+$('#lock-now').onclick = () => { setDlg.close(); lockApp(); };
+$('#lock-after').onchange = e => { prefs.lockAfter = +e.target.value; savePrefs(); };
+$('#todo-remind').onchange = e => { prefs.todoRemind = e.target.checked; savePrefs(); if (prefs.todoRemind) askNotify(); else scheduleReminders(); };
+$('#rem-allow').onclick = async () => { await askNotify(); renderSettings(); };
+// Opens Android's "Alarms & reminders" screen; only ever on the user's tap
+$('#rem-exact').onclick = async () => { try { await LN.changeExactNotificationSetting(); } catch {} remSig = ''; scheduleReminders(); renderSettings(); };
+$('#pin-set').onclick = () => setPinMode('set');
+$('#pin-change').onclick = () => setPinMode('change');
+$('#pin-off').onclick = () => setPinMode('off');
+$('#pin-cancel').onclick = () => setPinMode(null);
+$('#pin-form').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#pin-save').click(); } });
+$('#pin-save').onclick = async () => {
+  const say = t => { $('#pin-msg').textContent = t; $('#pin-msg').hidden = false; };
+  const pin = $('#pin-new').value;
+  if (pinMode !== 'set' && !(await pinOk($('#pin-cur').value))) return say('The current PIN is wrong.');
+  if (pinMode === 'off') {
+    pinRec = null;
+    try { localStorage.removeItem(KEY + '.lock'); } catch {}
+  } else {
+    if (!/^\d{4,8}$/.test(pin)) return say('Use 4 to 8 digits.');
+    if (pin !== $('#pin-rep').value) return say("The two PINs don't match.");
+    const salt = hex(crypto.getRandomValues(new Uint8Array(16)));
+    const rec = { salt, hash: await hashPin(pin, salt) };
+    try { localStorage.setItem(KEY + '.lock', JSON.stringify(rec)); } catch { return say("Couldn't save the PIN on this device."); }
+    pinRec = rec;
+  }
+  setPinMode(null); renderSettings();
+};
+
+/* ---------- search ---------- */
+const searchDlg = $('#search-dlg');
+function openSearch() { if (locked) return; $('#q').value = ''; $('#results').innerHTML = ''; searchDlg.showModal(); $('#q').focus(); }
+$('#open-search').onclick = openSearch;
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); } });
+// Highlight the first match; everything else is escaped
+const mark = (text, q) => {
+  text = String(text ?? '');
+  const i = text.toLowerCase().indexOf(q);
+  return i < 0 ? esc(text) : esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+};
+const around = (text, q) => { const i = text.toLowerCase().indexOf(q); return i < 40 ? text.slice(0, 110) : '…' + text.slice(i - 40, i + q.length + 70); };
+function searchAll(q) {
+  const has = (...f) => f.some(v => String(v ?? '').toLowerCase().includes(q));
+  const out = [];
+  for (const i of items.values()) {
+    if (i.deleted) continue;
+    let r;
+    if (i.kind === 'money' && has(i.where, i.note, i.amount)) r = ['Money', i.where, `${i.type === 'earn' ? 'Earned' : 'Spent'} ${money(i.amount)} · ${shortDate(i.date)}${i.note ? ' · ' + i.note : ''}`, i.date];
+    else if (i.kind === 'bill' && has(custName(i.customer), i.no, i.what, i.amount)) r = ['Bills', custName(i.customer), `#${i.no} · ${money(i.amount)} · ${i.paid ? 'Paid' : 'Unpaid'}${i.what ? ' · ' + i.what : ''}`, i.date];
+    else if (i.kind === 'customer' && has(i.name, i.phone, i.email, i.address, i.note)) r = ['Customers', i.name, [i.phone, i.email, i.address, i.note].filter(Boolean).join(' · '), ''];
+    else if (i.kind === 'journal' && has(i.title, i.body)) r = ['Journal', i.title || i.body.trim().split('\n')[0] || 'Untitled', around(i.body.replace(/\s+/g, ' '), q), i.date];
+    else if (i.kind === 'event' && has(i.title)) r = ['Calendar', i.title, longDate(i.date) + (i.repeat ? ' · ' + REPEAT[i.repeat] : ''), i.date];
+    else if (i.kind === 'todo' && has(i.text)) r = ['To-do', i.text, i.done ? 'Done' : i.due ? 'Due ' + shortDate(i.due) : 'No date', i.due || ''];
+    if (r) out.push({ sec: r[0], title: r[1], sub: r[2], date: r[3], id: i.id, kind: i.kind });
+  }
+  const order = ['Money', 'Bills', 'Customers', 'Journal', 'Calendar', 'To-do'];
+  return out.sort((a, b) => order.indexOf(a.sec) - order.indexOf(b.sec) || (b.date || '').localeCompare(a.date || '')).slice(0, 80);
+}
+$('#q').oninput = () => {
+  const q = $('#q').value.trim().toLowerCase();
+  if (!q) return $('#results').innerHTML = '';
+  let last = '';
+  $('#results').innerHTML = searchAll(q).map(r => (r.sec !== last ? `<li class="sec">${last = r.sec}</li>` : '')
+    + `<li><button type="button" data-go="${r.kind}:${r.id}"><b>${mark(r.title, q)}</b>${r.sub ? `<span>${mark(r.sub, q)}</span>` : ''}</button></li>`).join('')
+    || `<li class="none">Nothing matches "${esc($('#q').value.trim())}".</li>`;
+};
+$('#search-form').onsubmit = e => { e.preventDefault(); $('#results [data-go]')?.click(); };
+$('#results').onclick = e => {
+  const b = e.target.closest('[data-go]'); if (!b) return;
+  const [kind, id] = b.dataset.go.split(':');
+  searchDlg.close(); goTo(kind, id);
+};
+// Open the section that holds an item and point at it
+function goTo(kind, id) {
+  const x = get(id); if (!x) return;
+  if (kind === 'money') { mMonth = x.date.slice(0, 7); show('money'); }
+  else if (kind === 'bill') { bFilter = 'all'; bCust = null; show('bills'); }
+  else if (kind === 'customer') { bFilter = 'all'; bCust = id; show('bills'); }
+  else if (kind === 'journal') { flushJ(); jId = id; jDraft = null; show('journal'); return; }
+  else if (kind === 'event') { cDay = x.date; cMonth = x.date.slice(0, 7); show('calendar'); }
+  else if (kind === 'todo') { show('todo'); if (x.done && $('#t-done')) $('#t-done').open = true; }
+  const row = $('#' + view).querySelector(`[data-id="${id}"]`);
+  if (!row) return;
+  row.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+}
+
+/* ---------- reminders ---------- */
+// Android: the system delivers them even when LifeIG is closed. Computer and website: timers while LifeIG is open.
+const LN = window.Capacitor?.Plugins?.LocalNotifications;
+async function notifyState() { // 'granted' | 'denied' | 'prompt…'
+  if (LN) { try { return (await LN.checkPermissions()).display; } catch { return 'denied'; } }
+  return !('Notification' in window) ? 'denied' : Notification.permission === 'default' ? 'prompt' : Notification.permission;
+}
+async function askNotify() {
+  try {
+    if (LN) await LN.requestPermissions();
+    else if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
+  } catch {}
+  scheduleReminders();
+}
+// Reminders due in the next two weeks: plans with a reminder (repeats included) and, if turned on, to-dos at 9:00 on their due day
+function upcomingReminders(days = 14) {
+  const now = Date.now(), out = [];
+  const events = all('event').filter(e => e.remind != null && e.remind !== '');
+  const todos = prefs.todoRemind ? all('todo').filter(x => !x.done && x.due) : [];
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  for (let d = 0; d <= days + 1; d++) {
+    const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + d), k = iso(day);
+    for (const e of events) if (occurs(e, k)) {
+      const [h, m] = (e.time || '09:00').split(':').map(Number);
+      const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m).getTime() - e.remind * 60000;
+      const when = +e.remind === 1440 ? 'Tomorrow' + (e.time ? ' at ' + clock(e.time) : '') : !e.time ? 'Today' : +e.remind ? 'Starts at ' + clock(e.time) : 'Starting now';
+      out.push({ key: e.id + k, at, title: e.title, body: when });
+    }
+    const due = todos.filter(x => x.due === k);
+    if (due.length) out.push({ key: 'todo' + k, at: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9).getTime(),
+      title: due.length === 1 ? due[0].text : `${due.length} to-dos due today`, body: due.length === 1 ? 'Due today' : due.map(x => x.text).join(' · ') });
+  }
+  return out.filter(r => r.at > now && r.at <= now + (days + 1) * 864e5).sort((a, b) => a.at - b.at).slice(0, 60);
+}
+const idNum = s => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return (h & 0x7fffffff) || 1; };
+let remTimer, remSig = '', remTimers = [];
+function scheduleReminders() { clearTimeout(remTimer); remTimer = setTimeout(applyReminders, 1500); }
+// Android 12+: exact timing needs the "Alarms & reminders" permission. Without it, schedule inexact (can be a few minutes late)
+// rather than letting the plugin open that settings screen by itself. Settings offers the switch.
+const exactState = async () => !LN ? 'granted' : (await LN.checkExactNotificationSetting().catch(() => ({}))).exact_alarm || 'denied';
+async function applyReminders() {
+  const ok = (await notifyState()) === 'granted', exact = (await exactState()) === 'granted', list = ok ? upcomingReminders() : [];
+  const sig = JSON.stringify([exact, list.map(r => [r.key, r.at, r.title, r.body])]);
+  if (sig === remSig) return; // nothing changed since the last time
+  remSig = sig;
+  if (LN) {
+    try {
+      const { notifications } = await LN.getPending();
+      if (notifications.length) await LN.cancel({ notifications: notifications.map(n => ({ id: n.id })) });
+      if (list.length) await LN.schedule({ notifications: list.map(r => ({ id: idNum(r.key), title: r.title, body: r.body,
+        isExactNotification: exact, schedule: { at: new Date(r.at), allowWhileIdle: true } })) });
+    } catch { remSig = ''; }
+    return;
+  }
+  remTimers.forEach(clearTimeout);
+  remTimers = list.map(r => setTimeout(() => new Notification(r.title, { body: r.body, icon: 'icon-192.png', tag: r.key }), r.at - Date.now()));
+}
+setInterval(scheduleReminders, 3600000); // roll the two-week window forward and recover from sleep
+
 loadLocal();
 show(view);
+if (pinRec) lockApp();
 if (gh?.bad) setSync('Sync paused · tap to fix');
 sync();
 // Another open window saved: take its copy so neither overwrites the other
